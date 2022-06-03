@@ -1,0 +1,26 @@
+{
+  "name": "kamiloid_cli_node",
+  "version": "1.0.0",
+  "description": "Test1 detecting keys from keyboard",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kamiloid",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aclopezdev/cli_node.git"
+  },
+  "keywords": [
+    "node",
+    "nodejs",
+    "javascript",
+    "cli"
+  ],
+  "bugs": {
+    "url": "https://github.com/aclopezdev/cli_node/issues"
+  },
+  "homepage": "https://github.com/aclopezdev/cli_node#readme"
+}
