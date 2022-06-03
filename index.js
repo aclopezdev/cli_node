@@ -1,35 +1,7 @@
 /*jshint esversion:8*/
 
 const {Relast, Comp, Controls } = require('./cli_relast/index');
-
-
-class Component1 extends Comp
-{
-    constructor(props)
-    {
-        super(props);
-    }
-    states = () =>
-    {
-    }
-    controls = () =>
-    {
-        let menu = this.add_control(`basic_menu`, Controls.Basic_menu);
-        menu.add(`Item 1`);
-        menu.add(`Item 2`);
-        menu.add(`Item 3`);
-
-        let text1 = this.add_control(`text1`, Controls.Input_text);
-        //text1.on(EVENT.CHANGE, (value) =>
-            //{
-            //});
-    }
-
-    draw = () =>
-    {
-        return `Test [control:basic_menu] [control:text1]`;
-    }
-}
+const { Nav_Path } = require('./comps/index');
 
 class App extends Comp
 {
@@ -39,7 +11,7 @@ class App extends Comp
     }
     components = () =>
     {
-        this.create_comp(`component_1`, Component1, {title: 'Testing Component 1'});
+        this.create_comp(`Navigation`, Nav_Path, {title: 'Navigation'});
     }
     states = () =>
     {
@@ -60,7 +32,7 @@ class App extends Comp
     }
     draw = () =>
     {
-        return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) } [comp:component_1]`;
+        return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) } [comp:Navigation]`;
     }
 }
 
