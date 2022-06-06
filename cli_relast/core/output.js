@@ -40,7 +40,7 @@ module.exports.Print =
     {
         let pre = `${ Style.BgBlue }  ${ Style.FgCyan }冷 ${ Style.BgCyan }${ Style.FgBlue }`;
 
-        title = `${pre} ${ Style.FgBlack }${ txt }${ Style.FgBlack }  ${ Style.Reset }${ Style.FgCyan }${ Style.Reset }\n`;
+        title = `${ this.Print.end_of_line() }${pre} ${ Style.FgBlack }${ txt }${ Style.FgBlack }  ${ Style.Reset }${ Style.FgCyan }${ Style.Reset }${ this.Print.end_of_line() }`;
         if(!print) return title;
         console.log(title);
     },
@@ -48,6 +48,10 @@ module.exports.Print =
     {
         let comps_match = txt.match(/\[\comp:[a-z|A-Z|0-9]+\]/g);
         console.log(txt);
+    },
+    end_of_line: () =>
+    {
+        return '%EOL%';
     },
     buttons: (btns) =>
     {

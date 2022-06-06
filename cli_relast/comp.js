@@ -111,7 +111,7 @@ class Comp
                 let comp = this._comps[comp_name];
                 if(!comp) continue;
                 let comp_body = `${comp._props.title ? Print.subtitle(comp._props.title, false) : ``}${comp.draw ? comp.draw() : ``}`;
-                comp_body = `\n${ comp.print_comps(comp_body) }`;
+                comp_body = `${ Print.end_of_line() }${ comp.print_comps(comp_body) }`;
                 comp_body = comp.print_controls(comp_body);
                 body = body.replace(c, comp_body);
             }
@@ -157,6 +157,8 @@ class Comp
         let body = this.draw ? this.draw() : ``;
         body = this.print_comps(body);
         body = this.print_controls(body);
+        body = body.replace(/[\r|\n]*/g, '');
+        body = body.replace(/\%EOL\%/g, '\n');
         if(this._props.title)
             Print.title(this._props.title);
         Print.label(body);

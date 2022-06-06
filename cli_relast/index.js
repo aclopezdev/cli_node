@@ -17,7 +17,8 @@ function Relast()
 
     let _public =
     {
-        run: run
+        run: run,
+        app: () => { return this.app; }
     }
 
     return _public;

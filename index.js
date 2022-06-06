@@ -1,7 +1,10 @@
 /*jshint esversion:8*/
 
-const {Relast, Comp, Controls } = require('./cli_relast/index');
-const { Nav_Path } = require('./comps/index');
+const {Relast, Engine, Comp, Controls } = require('./cli_relast/index');
+const { Nav_Path, Body } = require('./comps/index');
+
+const util = require('util');
+const exec = util.promisify(require('child_process').exec);
 
 class App extends Comp
 {
@@ -11,7 +14,8 @@ class App extends Comp
     }
     components = () =>
     {
-        this.create_comp(`Navigation`, Nav_Path, {title: 'Navigation'});
+        this.create_comp(`Navigation`, Nav_Path);
+        this.create_comp(`Body`, Body, { title: `Main Content` });
     }
     states = () =>
     {
@@ -24,6 +28,18 @@ class App extends Comp
         {
             this.state(`key`, key);
         });
+
+        this.action(`add_body_item`, (data) =>
+        {
+            if(!this._comps[`Body`]) return;
+            this._comps[`Body`].call_action(`add`, data);
+        });
+
+        this.action(`change_content`, (data) =>
+        {
+            if(!this._comps[`Body`]) return;
+            this._comps[`Body`].call_action(`change`, data);
+        });
     }
     nav = (data) =>
     {
@@ -32,16 +48,79 @@ class App extends Comp
     }
     draw = () =>
     {
-        return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) } [comp:Navigation]`;
+        return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
+        [comp:Navigation]
+        [comp:Body]`;
+    }
+}
+
+function run(props, cback)
+{
+    if(!props) return;
+    Relast.run(props, App);
+    if(cback) cback();
+}
+
+module.exports =
+{
+    Relast: Relast,
+    Run: run
+}
+
+
+
+// ------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------
+class Status extends Comp
+{
+    constructor(props)
+    {
+        super(props);
+    }
+    states = () =>
+    {
+        this.state(`resp`, ``);
+    }
+    draw = () =>
+    {
+        exec( 'git Status -s' , ( err, out ) =>
+            {
+                this.state(`resp`, out);
+            });
+        return `${ this.state(`resp`) }`;
     }
 }
 
 
-Relast.run({
-    name: 'Testing 1',
-    title: 'Testing 1'
-}, App);
+class Branches extends Comp
+{
+    constructor(props)
+    {
+        super(props);
+    }
+    states = () =>
+    {
+        this.state(`resp`, ``);
+    }
+    draw = () =>
+    {
+        exec( 'git branch' , ( err, out ) =>
+            {
+                this.state(`resp`, out);
+            });
+        return `${ this.state(`resp`) }`;
+    }
+}
 
+main({
+    name: 'Git',
+    title: 'Git Manager'
+}, () =>
+{
+    Relast.app().call_action(`add_body_item`, { name: `git_branch`, item: new Branches() } );
+    Relast.app().call_action(`add_body_item`, { name: `git_status`, item: new Status() } );
+    Relast.app().call_action(`change_content`, { name: `git_branch` });
+});
 
 
 /*
