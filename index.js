@@ -73,6 +73,26 @@ module.exports =
 // ------------------------------------------------------------------------------------------
 const Git =
 {
+    branch: ( cback ) =>
+    {
+        let cmd = `git branch`;
+        exec( cmd, ( err, resp ) =>
+        {
+            let buffer = [];
+            if(err) return;
+            let split = resp.split(`\n`);
+            for(let i of split)
+            {
+                if(i.trim() === '') continue;
+                let branch = i.trim();
+                let data = { name: branch, selected: false };
+                if(branch.includes(`*`))
+                    data = { name: branch.replace(`* `, ''), selected: true };
+                buffer.push(data);
+            }
+            if(cback) cback(buffer);
+        } );
+    },
     status: ( cback ) =>
     {
         let cmd = `git status -s`;
@@ -83,10 +103,35 @@ const Git =
             buffer.untracked = [];
             buffer.unstaged = [];
 
-            console.log(resp);
+            let split = resp.split(`\n`);
+            for(let i of split)
+            {
+                if(i.trim() === '') continue;
+                let file = i.trim();
+                let type_match = file.match(/[M\s|M\s\s|MM\s|\?\?\s|D\s|D\s\s|DD\s]+/gm);
+                if(type_match.length <= 0) continue;
+                let type = type_match[0];
+                file = file.replace(type_match[0], '');
+                if(type.toLowerCase() === 'm ' || type.toLowerCase() === 'mm ' || type.toLowerCase() === 'd ' || type.toLowerCase() === 'dd ')
+                    buffer.unstaged.push( { name: file, type: type.trim() } );
+                else if(type.toLowerCase() === 'm  ' || type.toLowerCase() === 'd  ')
+                    buffer.staged.push( { name: file, type: type.trim() } );
+                else if(type === '??')
+                    buffer.untracked.push( { name: file } );
+            }
+            if(cback) cback(buffer);
         } );
     }
 }
+
+Git.branch( (items) =>
+{
+    console.log(items);
+} );
+Git.status( (items) =>
+{
+    console.log(items);
+} );
 
 
 
@@ -120,25 +165,33 @@ class Branches extends Comp
     {
         this.state(`resp`, ``);
     }
+    actions = () =>
+    {
+        this.action(`load_branches`, () => 
+        {
+            Git.branch( (items) =>
+            {
+                console.log(items);
+            } );
+        });
+    }
     draw = () =>
     {
-        exec( 'git branch' , ( err, out ) =>
-            {
-                this.state(`resp`, out);
-            });
         return `${ this.state(`resp`) }`;
     }
 }
 
-run({
-    name: 'Git',
-    title: 'Git Manager'
-}, () =>
-{
-    Relast.app().call_action(`add_body_item`, { name: `git_branch`, item: new Branches() } );
-    Relast.app().call_action(`add_body_item`, { name: `git_status`, item: new Status() } );
-    Relast.app().call_action(`change_content`, { name: `git_branch` });
-});
+// run({
+//     name: 'Git',
+//     title: 'Git Manager'
+// }, () =>
+// {
+//     let branches = new Branches();
+//     Relast.app().call_action(`add_body_item`, { name: `git_branch`, item: branches } );
+//     Relast.app().call_action(`add_body_item`, { name: `git_status`, item: new Status() } );
+//     Relast.app().call_action(`change_content`, { name: `git_branch` });
+//     branches.call_action(`load_branches`);
+// });
 
 
 /*
