@@ -6,11 +6,13 @@ const {Print} = require('./core/output');
 
 const engine =
 {
+    _props: null,
     _root: null,
     _loop: null,
     _pointer: 0, // pointer is the indicator of selectable content
     init: function(props)
     {
+        this._props = props;
         this._root = props.app;
         if(this._root.init)
             this._root.init();
@@ -22,7 +24,7 @@ const engine =
         this._loop = setInterval(() => 
             {
                 this.loop();
-            }, 100);
+            }, this._props.sync);
 
         Interact.on(Interact.DISPATCHERS.NAV, (nav) => 
         {
@@ -39,7 +41,7 @@ const engine =
         
         //RENDERING
         Print.clear();
-        this._root.page(); 
+        this._root.page();
     },
     kill: function()
     {

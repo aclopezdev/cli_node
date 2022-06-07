@@ -40,18 +40,18 @@ class App extends Comp
             if(!this._comps[`Body`]) return;
             this._comps[`Body`].call_action(`change`, data);
         });
-    }
+    };
     nav = (data) =>
     {
         this.call_action(`key_input`, data.direction);
         this.state(`main_pointer`, data.pointer);
-    }
+    };
     draw = () =>
     {
         return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
         [comp:Navigation]
         [comp:Body]`;
-    }
+    };
 }
 
 function run(props, cback)
@@ -71,6 +71,25 @@ module.exports =
 
 // ------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------
+const Git =
+{
+    status: ( cback ) =>
+    {
+        let cmd = `git status -s`;
+        exec( cmd, ( err, resp ) =>
+        {
+            let buffer = [];
+            buffer.staged = [];
+            buffer.untracked = [];
+            buffer.unstaged = [];
+
+            console.log(resp);
+        } );
+    }
+}
+
+
+
 class Status extends Comp
 {
     constructor(props)
@@ -83,10 +102,9 @@ class Status extends Comp
     }
     draw = () =>
     {
-        exec( 'git Status -s' , ( err, out ) =>
-            {
-                this.state(`resp`, out);
-            });
+        Git.status( () => {
+
+        } );
         return `${ this.state(`resp`) }`;
     }
 }
@@ -112,7 +130,7 @@ class Branches extends Comp
     }
 }
 
-main({
+run({
     name: 'Git',
     title: 'Git Manager'
 }, () =>

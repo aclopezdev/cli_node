@@ -10,7 +10,8 @@ function Relast()
     {
         this.app = new App(props);
         Engine.init({
-            app: this.app
+            app: this.app,
+            sync: props.sync || 100
         });
         Engine.run();
     }
