@@ -15,6 +15,7 @@ class Comp
     _cmds = [];
     _controls = [];
     _screen = ``;
+    _reducers = [];
     constructor(props)
     {
         this._props = props || {};
@@ -68,21 +69,32 @@ class Comp
             if(!c.name || typeof c.name !== 'string') continue;
             this.add_comp(c.name, c.data);
         }
-    }
-    state = (k, v = undefined) =>
+    };
+    state = (k, v = undefined, reducer) =>
     {
         if(v !== undefined && v !== null)
         {
             let keeper = this._states[k] || null;
             this._states[k] = v;
             Gossipy.add_gossip(Gossipy.GOSSIP.STATE_CHANGE);
-            if(this._states[k] !== undefined && this._states[k] !== null)
+            if(keeper !== undefined && keeper !== null)
             {
                 this._prev_states[k] = keeper;
+                this.fire_reduce(k, reducer.args || {});
+            }else{
+                this.reduce(k, reducer.triggers || []);
             }
         }else{
             return this._states[k];
         }
+    };
+
+    reduce = (state, triggers) =>
+    {
+    };
+
+    fire_reduce = (state, triggers) =>
+    {
     };
 
     get_control = (k) =>

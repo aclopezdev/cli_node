@@ -1,185 +1,26 @@
 /*jshint esversion:8*/
 
-const {Relast, Engine, Comp, Controls } = require('./cli_relast/index');
-const { Nav_Path, Body } = require('./comps/index');
+const Relast = require('./cli_relast/index');
 
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
 
-class App extends Comp
-{
-    constructor(props)
-    {
-        super(props);
-    }
-    components = () =>
-    {
-        this.create_comp(`Navigation`, Nav_Path);
-        this.create_comp(`Body`, Body, { title: `Main Content` });
-    }
-    states = () =>
-    {
-        this.state(`main_pointer`, 0);
-        this.state(`key`, '');
-    }
-    actions = () =>
-    {
-        this.action(`key_input`, (key) =>
-        {
-            this.state(`key`, key);
-        });
-
-        this.action(`add_body_item`, (data) =>
-        {
-            if(!this._comps[`Body`]) return;
-            this._comps[`Body`].call_action(`add`, data);
-        });
-
-        this.action(`change_content`, (data) =>
-        {
-            if(!this._comps[`Body`]) return;
-            this._comps[`Body`].call_action(`change`, data);
-        });
-    };
-    nav = (data) =>
-    {
-        this.call_action(`key_input`, data.direction);
-        this.state(`main_pointer`, data.pointer);
-    };
-    draw = () =>
-    {
-        return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
-        [comp:Navigation]
-        [comp:Body]`;
-    };
-}
-
-function run(props, cback)
+Relast.run = (props, main_app, cback) =>
 {
     if(!props) return;
-    Relast.run(props, App);
-    if(cback) cback();
-}
+    Relast.Relast.run(props, main_app);
+    if(cback) cback( Relast, Relast.Relast.app );
+};
 
 module.exports =
 {
-    Relast: Relast,
-    Run: run
-}
+    CLI_Relast: Relast,
+    Comps: require('./comps/index')
+};
 
 
 
 // ------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------
-const Git =
-{
-    branch: ( cback ) =>
-    {
-        let cmd = `git branch`;
-        exec( cmd, ( err, resp ) =>
-        {
-            let buffer = [];
-            if(err) return;
-            let split = resp.split(`\n`);
-            for(let i of split)
-            {
-                if(i.trim() === '') continue;
-                let branch = i.trim();
-                let data = { name: branch, selected: false };
-                if(branch.includes(`*`))
-                    data = { name: branch.replace(`* `, ''), selected: true };
-                buffer.push(data);
-            }
-            if(cback) cback(buffer);
-        } );
-    },
-    status: ( cback ) =>
-    {
-        let cmd = `git status -s`;
-        exec( cmd, ( err, resp ) =>
-        {
-            let buffer = [];
-            buffer.staged = [];
-            buffer.untracked = [];
-            buffer.unstaged = [];
 
-            let split = resp.split(`\n`);
-            for(let i of split)
-            {
-                if(i.trim() === '') continue;
-                let file = i.trim();
-                let type_match = file.match(/[M\s|M\s\s|MM\s|\?\?\s|D\s|D\s\s|DD\s]+/gm);
-                if(type_match.length <= 0) continue;
-                let type = type_match[0];
-                file = file.replace(type_match[0], '');
-                if(type.toLowerCase() === 'm ' || type.toLowerCase() === 'mm ' || type.toLowerCase() === 'd ' || type.toLowerCase() === 'dd ')
-                    buffer.unstaged.push( { name: file, type: type.trim() } );
-                else if(type.toLowerCase() === 'm  ' || type.toLowerCase() === 'd  ')
-                    buffer.staged.push( { name: file, type: type.trim() } );
-                else if(type === '??')
-                    buffer.untracked.push( { name: file } );
-            }
-            if(cback) cback(buffer);
-        } );
-    }
-}
-
-Git.branch( (items) =>
-{
-    console.log(items);
-} );
-Git.status( (items) =>
-{
-    console.log(items);
-} );
-
-
-
-class Status extends Comp
-{
-    constructor(props)
-    {
-        super(props);
-    }
-    states = () =>
-    {
-        this.state(`resp`, ``);
-    }
-    draw = () =>
-    {
-        Git.status( () => {
-
-        } );
-        return `${ this.state(`resp`) }`;
-    }
-}
-
-
-class Branches extends Comp
-{
-    constructor(props)
-    {
-        super(props);
-    }
-    states = () =>
-    {
-        this.state(`resp`, ``);
-    }
-    actions = () =>
-    {
-        this.action(`load_branches`, () => 
-        {
-            Git.branch( (items) =>
-            {
-                console.log(items);
-            } );
-        });
-    }
-    draw = () =>
-    {
-        return `${ this.state(`resp`) }`;
-    }
-}
 
 // run({
 //     name: 'Git',

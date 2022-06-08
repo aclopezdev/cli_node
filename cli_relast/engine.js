@@ -52,6 +52,19 @@ const engine =
     }
 };
 
+// class Reducer
+// {
+//     _props = {};
+//     constructor(props)
+//     {
+//         this._props = props;
+//     }
+//     init = () =>
+//     {
+//         if()
+//     }
+// }
+
 module.exports =
 {
     Engine: engine
