@@ -7,6 +7,8 @@ const controls = require('./controls');
 class Comp 
 {
     _props = null;
+    _main = null;
+    _parent = null;
     _bbox = null;
     _comps = {};
     _actions = {};
@@ -19,6 +21,9 @@ class Comp
     constructor(props)
     {
         this._props = props || {};
+        this._parent = this._props.parent || this;
+        this._main = this._props.main || this;
+
         if(!this._props._bbox) return;
         this._bbox = this._props.bbox;
     }
@@ -38,6 +43,8 @@ class Comp
     create_comp = (k, _class, props = {}) =>
     {
         if(!_class) return null;
+        props.parent = this;
+        props.main = this._main || this;
         this.add_comp(k, {class: _class, props: props});
         return this._comps[k];
     }
@@ -80,10 +87,12 @@ class Comp
             if(keeper !== undefined && keeper !== null)
             {
                 this._prev_states[k] = keeper;
-                this.fire_reduce(k, reducer.args || {});
             }else{
-                this.reduce(k, reducer.triggers || []);
+                if(reducer)
+                    this.reduce(k, reducer.triggers || []);
             }
+
+            this.fire_reduce(k, (reducer || {}).args || {});
         }else{
             return this._states[k];
         }
@@ -91,10 +100,25 @@ class Comp
 
     reduce = (state, triggers) =>
     {
+        if(!state || !triggers) return;
+        this._reducers[state] = triggers;
+        Print.log(this._reducers);
     };
 
-    fire_reduce = (state, triggers) =>
+    fire_reduce = (state, args = {}) =>
     {
+        if(!state) return;
+        if(!this._reducers[state]) return;
+        let buffer = this._reducers[state];
+        if(!buffer) return;
+        args.value = this._states[state];
+        args.prev_value = this._prev_states[state];
+        args.me = this;
+        args.parent = this._parent;
+        args.main = this._main;
+        for(let trigger of buffer)
+            if(typeof trigger === 'function') 
+                trigger(args);
     };
 
     get_control = (k) =>

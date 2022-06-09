@@ -13,7 +13,8 @@ Relast.run = (props, main_app, cback) =>
 module.exports =
 {
     CLI_Relast: Relast,
-    Comps: require('./comps/index')
+    Comps: require('./comps/index'),
+    Log: Relast.Log
 };
 
 

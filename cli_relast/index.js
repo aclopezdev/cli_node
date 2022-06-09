@@ -1,6 +1,7 @@
 /*jshint esversion:8*/
 
 const { Engine } = require('./engine');
+const { Print } = require('./core/output');
 
 function Relast()
 {
@@ -8,6 +9,7 @@ function Relast()
 
     let run = (props, App) =>
     {
+        Print._debug = props.debug || false;
         this.app = new App(props);
         Engine.init({
             app: this.app,
@@ -30,6 +32,7 @@ module.exports =
     Comp: require('./comp').Comp,
     Controls: require('./controls'),
     Engine: Engine,
-    Relast: new Relast()
+    Relast: new Relast(),
+    Log: Print.log
 }
 

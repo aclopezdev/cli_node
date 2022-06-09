@@ -5,6 +5,22 @@ const {Style} = require('./color');
 module.exports.Print =
 {
     cols: process.stdout.columns,
+    _debug: false,
+    _debugger: [],
+    log: (txt) =>
+    {
+        if(!this.Print._debug) return;
+        if(!this.Print._debugger)
+            this.Print._debugger = [];
+        this.Print._debugger.push(txt);
+    },
+    print_logged: () =>
+    {
+        if(!this.Print._debug) return;
+        if(!this.Print._debugger) return;
+        for(let l of this.Print._debugger)
+            console.log(l);
+    },
     clear: () =>
     {
         console.clear();

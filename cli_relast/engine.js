@@ -42,6 +42,7 @@ const engine =
         //RENDERING
         Print.clear();
         this._root.page();
+        Print.print_logged();
     },
     kill: function()
     {

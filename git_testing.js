@@ -1,10 +1,11 @@
 /*jshint esversion: 8*/
 const { CLI_Relast, Comps } = require('./index');
-const { Relast, Comp } = CLI_Relast;
+const { Relast, Comp, Log } = CLI_Relast;
 const { Nav_Path, Body } = Comps;
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
+//--------------------------------------------------------------------------------------------------- 
 
 const Git =
 {
@@ -73,10 +74,15 @@ Git.status( (items) =>
 
 
 
-// const Controller =
-// {
-//     App: 
-// };
+const Controller =
+{
+    App: {
+        move_pointer: args =>
+        {
+            Log(98997);
+        }
+    }
+};
 
 
 
@@ -182,7 +188,7 @@ class App extends Comp
     }
     states = () =>
     {
-        this.state(`main_pointer`, 0);
+        this.state(`main_pointer`, 0, { triggers: [ Controller.App.move_pointer ] });
         this.state(`key`, '');
     }
     actions = () =>
@@ -195,6 +201,7 @@ class App extends Comp
     nav = (data) =>
     {
         this.call_action(`key_input`, data.direction);
+        Log(12212);
         this.state(`main_pointer`, data.pointer);
     };
     draw = () =>
@@ -206,9 +213,10 @@ class App extends Comp
 }
 
 
-// CLI_Relast.run({
-//     name: 'git_manager',
-//     title: 'Git Manager'
-// }, App, (fw, app) =>
-// {
-// });
+CLI_Relast.run({
+    name: 'git_manager',
+    title: 'Git Manager',
+    debug: true
+}, App, (fw, app) =>
+{
+});
