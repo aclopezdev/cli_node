@@ -7,7 +7,7 @@ Relast.run = (props, main_app, cback) =>
 {
     if(!props) return;
     Relast.Relast.run(props, main_app);
-    if(cback) cback( Relast, Relast.Relast.app );
+    if(cback) cback( Relast, Relast.Relast.app() );
 };
 
 module.exports =

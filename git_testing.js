@@ -80,6 +80,15 @@ const Controller =
         move_pointer: args =>
         {
             Log(98997);
+        },
+    },
+    Status: {
+        get_status: args =>
+        {
+            Git.status( (items) =>
+            {
+                Log(items);
+            } );
         }
     }
 };
@@ -99,6 +108,16 @@ class Status extends Comp
     states = () =>
     {
         this.state(`resp`, ``);
+    }
+    actions = () =>
+    {
+        this.action(`status`, () =>
+            {
+                Git.status( items =>
+                    {
+                        Log(items);
+                    });
+            });
     }
     draw = () =>
     {
@@ -126,7 +145,7 @@ class Branches extends Comp
         {
             Git.branch( (items) =>
             {
-                console.log(items);
+                Log(items);
             } );
         });
     }
@@ -160,6 +179,10 @@ class Content extends Body
     }
     actions = () =>
     {
+        this.action(`start`, () =>
+            {
+                this.get_comp(`Git_status`).call_action(`status`);
+            });
         this.action(`change_content`, value =>
             {
                 if(typeof value !== 'string') return;
@@ -193,10 +216,15 @@ class App extends Comp
     }
     actions = () =>
     {
+        this.action(`start`, () =>
+        {
+            this.get_comp(`Body`).call_action(`start`);
+        });
         this.action(`key_input`, (key) =>
         {
             this.state(`key`, key);
         });
+        
     };
     nav = (data) =>
     {
@@ -219,4 +247,5 @@ CLI_Relast.run({
     debug: true
 }, App, (fw, app) =>
 {
+    app.call_action(`start`);
 });
