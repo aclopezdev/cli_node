@@ -1,6 +1,6 @@
 /*jshint esversion: 8*/
 const { CLI_Relast, Comps } = require('./index');
-const { Relast, Comp, Log } = CLI_Relast;
+const { Relast, Comp, Log, Controls, Print } = CLI_Relast;
 const { Nav_Path, Body } = Comps;
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
@@ -62,11 +62,9 @@ const Git =
 
 Git.branch( (items) =>
 {
-    console.log(items);
 } );
 Git.status( (items) =>
 {
-    console.log(items);
 } );
 
 
@@ -79,15 +77,15 @@ const Controller =
     App: {
         move_pointer: args =>
         {
-            Log(98997);
         },
+    },
+    Content: {
     },
     Status: {
         get_status: args =>
         {
             Git.status( (items) =>
             {
-                Log(items);
             } );
         }
     }
@@ -115,7 +113,6 @@ class Status extends Comp
             {
                 Git.status( items =>
                     {
-                        Log(items);
                     });
             });
     }
@@ -145,7 +142,6 @@ class Branches extends Comp
         {
             Git.branch( (items) =>
             {
-                Log(items);
             } );
         });
     }
@@ -157,41 +153,96 @@ class Branches extends Comp
 
 
 
-
-
+class Step1 extends Controls.Basic_menu
+{
+    constructor(props)
+    {
+        super(props);
+        this.add({ name: `git_branches`, label: `Check local branches` });
+        this.add({ name: `git_status`, label: `Check current status` });
+        this.add({ name: `git_add`, label: `Add files to stage` });
+        this.add({ name: `git_commit`, label: `Commit changes` });
+        this.add({ name: `git_push`, label: `Push to origin` });
+        this.add({ name: `git_fetch`, label: `Fetch from origin` });
+        this.add({ name: `git_pull`, label: `Pull from origin` });
+    }
+    up = () =>
+    {
+        this._index = Math.max(0, this._index - 1);
+    }
+    down = () =>
+    {
+        this._index = Math.min(this._items.length - 1, this._index + 1);
+    }
+    draw = () =>
+    {
+        return `${ this._items.map( (v, i) =>
+            {
+                return `${ this._index === i ? `[-->]` : `[   ]` } ${ v.label }`;
+            }).toString().replace(/\,\s?/g, Print.end_of_line() ) }`;
+    }
+}
 
 
 class Content extends Body
 {
+    _content = [
+        { type: `control`, name: `Main_menu`, _class: Step1, nav: true },
+        { type: `comp`, name: `Git_branches`, _class: Branches, props: { title: `Branches manager` } },
+        { type: `comp`, name: `Git_status`, _class: Status, props: { title: `Git Status` } }
+    ];
+    _trackers = [];
     constructor(props)
     {
         super(props);
     }
     components = () =>
     {
-        this.create_comp(`Git_branches`, Branches, { title: `Branches manager` });
-        this.create_comp(`Git_status`, Status, { title: `Git Status` });
+        for(let c of this._content)
+        {
+            let func = `${ c.type === 'control' ? `add` : `create` }_${ c.type }`;
+            let act = this[func];
+            act(`${ c.name }`, c._class, c.props || {});
+            if(c.nav)
+                this._trackers[c.name] = 0;
+        }
     }
     states = () =>
     {
+        this.state(`trigger`, false);
+        this.state(`step`, 0);
         this.state(`branch`, ``);
-        this.state(`content`, `Git_branches`);
+        this.state(`content`, `Main_menu`);
     }
     actions = () =>
     {
         this.action(`start`, () =>
+        {
+        });
+        this.action(`navigate`, key =>
+        {
+            if(typeof this._trackers[ this.state(`content`) ] !== 'undefined')
             {
-                this.get_comp(`Git_status`).call_action(`status`);
-            });
+                this._trackers[ this.state(`content`) ] += key;
+                let main_menu = this.get_control(`Main_menu`);
+                if(key < 0) main_menu.up();
+                else if(key > 0) main_menu.down();
+            }
+            this.state(`trigger`, !this.state(`trigger`));
+        });
         this.action(`change_content`, value =>
-            {
-                if(typeof value !== 'string') return;
-                this.state(`content`, value);
-            });
+        {
+            if(typeof value !== 'string') return;
+            this.state(`content`, value);
+        });
     }
     draw = () =>
     {
-        return `[comp:${ this.state(`content`) }]`;
+        return `${ this.state(`step`) === 0 ?
+            `[control:Main_menu]`
+        :
+            `[comp:${ this.state(`content`) }]` 
+        }`;
     }
 }
 
@@ -218,25 +269,25 @@ class App extends Comp
     {
         this.action(`start`, () =>
         {
-            this.get_comp(`Body`).call_action(`start`);
         });
         this.action(`key_input`, (key) =>
         {
             this.state(`key`, key);
+            this.get_comp(`Body`).call_action(`navigate`, key);
         });
         
     };
     nav = (data) =>
     {
         this.call_action(`key_input`, data.direction);
-        Log(12212);
         this.state(`main_pointer`, data.pointer);
     };
     draw = () =>
     {
-        return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
-        [comp:Navigation]
-        [comp:Body]`;
+        //return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
+        //[comp:Navigation]
+        //[comp:Body]`;
+        return `[comp:Body]`;
     };
 }
 
@@ -247,5 +298,4 @@ CLI_Relast.run({
     debug: true
 }, App, (fw, app) =>
 {
-    app.call_action(`start`);
 });

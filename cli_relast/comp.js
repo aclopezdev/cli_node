@@ -38,6 +38,7 @@ class Comp
             this.controls();
         if(this.actions)
             this.actions();
+        this.call_action(`start`);
     }
 
     create_comp = (k, _class, props = {}) =>
@@ -102,7 +103,6 @@ class Comp
     {
         if(!state || !triggers) return;
         this._reducers[state] = triggers;
-        Print.log(this._reducers);
     };
 
     fire_reduce = (state, args = {}) =>

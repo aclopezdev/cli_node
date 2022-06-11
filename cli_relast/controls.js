@@ -46,6 +46,7 @@ class Input_text extends Control
 class Items extends Control
 {
     _items = [];
+    _index = 0;
     constructor(props)
     {
         super(props);

@@ -33,6 +33,7 @@ module.exports =
     Controls: require('./controls'),
     Engine: Engine,
     Relast: new Relast(),
-    Log: Print.log
+    Log: Print.log,
+    Print: Print
 }
 
