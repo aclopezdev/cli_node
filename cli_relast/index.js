@@ -1,6 +1,6 @@
 /*jshint esversion:8*/
 
-const { Engine } = require('./engine');
+const { Engine, Nav_System } = require('./engine');
 const { Print } = require('./core/output');
 
 function Relast()
@@ -32,6 +32,7 @@ module.exports =
     Comp: require('./comp').Comp,
     Controls: require('./controls'),
     Engine: Engine,
+    Nav_System: Nav_System,
     Relast: new Relast(),
     Log: Print.log,
     Print: Print

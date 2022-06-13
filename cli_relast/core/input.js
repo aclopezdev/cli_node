@@ -48,15 +48,18 @@ const interact =
                 }else if (key === '\u001B\u005B\u0042')
                 {
                     dir = interact.DIR.DOWN;
+                }else if(key === '\r')
+                {
+                    dir = interact.DIR.ENTER;
                 }
 
                 for(let d of this._dispatchers.nav)
                 {
-                    if(d) d({ state: interact.STATE.NAV, dir: dir });
+                    if(d) d({ state: interact.STATE.NAV, dir: dir, key: key });
                 }
 
                 if(cback)
-                    cback({ state: NAV, data: dir });
+                    cback({ state: NAV, data: dir, key: key });
             }
 
             if (key === this._exit_key || key === '\u0003')
@@ -67,10 +70,9 @@ const interact =
                 }
                 if(cback)
                     cback({ state: interact.STATE.KILL });
-                process.exit();
             }
         });
-    }
+    },
 };
 
 interact.STATE =
@@ -84,7 +86,8 @@ interact.DIR =
 {
     NONE: 0,
     UP: -1,
-    DOWN: 1
+    DOWN: 1,
+    ENTER: 1000
 };
 
 interact.DISPATCHERS =

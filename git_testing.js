@@ -1,6 +1,6 @@
 /*jshint esversion: 8*/
 const { CLI_Relast, Comps } = require('./index');
-const { Relast, Comp, Log, Controls, Print } = CLI_Relast;
+const { Relast, Nav_System, Comp, Log, Controls, Print } = CLI_Relast;
 const { Nav_Path, Body } = Comps;
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
@@ -249,6 +249,67 @@ class Content extends Body
 
 
 
+
+
+
+
+
+
+
+
+
+
+const Nav_Manifest = {
+    'main':{
+        'tree': [
+            { 
+                name: 'init', 
+                label: 'Git Init',
+                api: [ { name: 'Git_init', args: { type: 'input_text' } } ]
+            },
+            { 
+                name: 'branches', 
+                label: 'Git Branches',
+                action: 'enter',
+                tree: [ 
+                    { name: 'checkout', label: 'Checkout', api: [ { name: 'Git_checkout_branch' } ] },
+                    { name: 'create_new_from', label: 'Create new from this branch', api: [ { name: 'Git_new_from_branch' } ] },
+                    { name: 'delete', label: 'Delete', api: [ { name: 'Git_delete_branch' } ] },
+                ]
+            },
+            {
+                name: 'status',
+                label: 'Git Status',
+                action: 'enter',
+                tree: [
+                    { name: 'add_file', label: 'Add file', api: [ { name: 'Git_add_file', args: { type: 'input_text' } } ] },
+                    { name: 'add all', label: 'Add all', api: [ { name: 'Git_add_all' } ]}
+                ]
+            }
+        ]
+    }
+};
+
+
+class Navigation extends Nav_System
+{
+    constructor(props)
+    {
+        super(props);
+    }
+    actions = () =>
+    {
+        this.action(`start`, () =>
+        {
+        });
+        this.action(`key_motion`, key =>
+            {
+                this.navigate_menu(key);
+            });
+    }
+}
+
+
 class App extends Comp
 {
     constructor(props)
@@ -257,8 +318,8 @@ class App extends Comp
     }
     components = () =>
     {
-        this.create_comp(`Navigation`, Nav_Path);
-        this.create_comp(`Body`, Content, { title: `Main Content` });
+        this.create_comp(`navigation`, Navigation, { title: `Navigation`, nav_manifest: Nav_Manifest, control: { } });
+        //this.create_comp(`Body`, Content, { title: `Main Content` });
     }
     states = () =>
     {
@@ -273,7 +334,8 @@ class App extends Comp
         this.action(`key_input`, (key) =>
         {
             this.state(`key`, key);
-            this.get_comp(`Body`).call_action(`navigate`, key);
+            this.get_comp(`navigation`).call_action(`key_motion`, key);
+            //this.get_comp(`Body`).call_action(`navigate`, key);
         });
         
     };
@@ -287,7 +349,8 @@ class App extends Comp
         //return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
         //[comp:Navigation]
         //[comp:Body]`;
-        return `[comp:Body]`;
+        //return `[comp:Body]`;
+        return `[comp:navigation]`;
     };
 }
 
