@@ -67,16 +67,22 @@ const engine =
 class Nav_system extends Comp
 {
     _nav = null;
+    _config = null;
     _manifest = null;
     constructor(props)
     {
         super(props);
         this._nav = new Nav_System_Control(props.control || {});
-        if(props.nav_manifest)
+        if(props.config)
         {
-            this._manifest = props.nav_manifest;
-            this.manifest_decode();
+            this._config = props.config;
+            if(this._config.manifest)
+            {
+                this._manifest = this._config.manifest;
+                this.manifest_decode();
+            }
         }
+       
     }
     manifest_decode = () =>
     {
@@ -118,9 +124,34 @@ class Nav_system extends Comp
     }
 }
 
+
+class viewer extends Comp
+{
+    _init_line = 0;
+    _end_line = 0;
+    _index = 0;
+    _print_buffer = ``;
+    constructor(props)
+    {
+        super(props);
+    }
+    scrolling = (motion = 0) =>
+    {
+    }
+    draw = () =>
+    {
+        this._print_buffer = `${Print.print_cols()}`;
+        this._print_buffer += `wrehgpierwhgierwgoiwerb${ Print.end_of_line() }`;
+        this._print_buffer += `${Print.print_cols()}`;
+
+        return this._print_buffer;
+    }
+}
+
 module.exports =
 {
     Engine: engine,
-    Nav_System: Nav_system
+    Nav_System: Nav_system,
+    Viewer: viewer
 }
 

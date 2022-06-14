@@ -1,6 +1,6 @@
 /*jshint esversion:8*/
 
-const { Engine, Nav_System } = require('./engine');
+const { Engine, Nav_System, Viewer } = require('./engine');
 const { Print } = require('./core/output');
 
 function Relast()
@@ -35,6 +35,7 @@ module.exports =
     Nav_System: Nav_System,
     Relast: new Relast(),
     Log: Print.log,
-    Print: Print
+    Print: Print,
+    Viewer: Viewer 
 }
 

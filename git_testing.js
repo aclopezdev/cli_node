@@ -1,8 +1,9 @@
 /*jshint esversion: 8*/
 const { CLI_Relast, Comps } = require('./index');
-const { Relast, Nav_System, Comp, Log, Controls, Print } = CLI_Relast;
+const { Relast, Nav_System, Viewer, Comp, Log, Controls, Print } = CLI_Relast;
 const { Nav_Path, Body } = Comps;
 const util = require('util');
+const {Interact} = require('./cli_relast/core/input');
 const exec = util.promisify(require('child_process').exec);
 
 //--------------------------------------------------------------------------------------------------- 
@@ -272,6 +273,7 @@ const Nav_Manifest = {
                 label: 'Git Branches',
                 action: 'enter',
                 tree: [ 
+                    { name: 'local_list', label: 'Local branches', onFocus: '', onEnter: '' },
                     { name: 'checkout', label: 'Checkout', api: [ { name: 'Git_checkout_branch' } ] },
                     { name: 'create_new_from', label: 'Create new from this branch', api: [ { name: 'Git_new_from_branch' } ] },
                     { name: 'delete', label: 'Delete', api: [ { name: 'Git_delete_branch' } ] },
@@ -287,6 +289,14 @@ const Nav_Manifest = {
                 ]
             }
         ]
+    }
+};
+
+
+const App_conf =
+{
+    manifest: Nav_Manifest,
+    actions: {
     }
 };
 
@@ -309,22 +319,43 @@ class Navigation extends Nav_System
     }
 }
 
+class Preview extends Viewer
+{
+    constructor(props)
+    {
+        super(props);
+    }
+    actions = () =>
+    {
+        this.action(`start`, () =>
+        {
+        });
+        this.action(`key_motion`, key =>
+        {
+            this.scrolling(key);
+        });
+    }
+}
+
 
 class App extends Comp
 {
+    _comps_tabs = [`navigation`, `preview`];
     constructor(props)
     {
         super(props);
     }
     components = () =>
     {
-        this.create_comp(`navigation`, Navigation, { title: `Navigation`, nav_manifest: Nav_Manifest, control: { } });
+        this.create_comp(`navigation`, Navigation, { title: `Navigation`, config: App_conf, control: { } });
+        this.create_comp(`preview`, Preview, { title: `Actions viewer` });
         //this.create_comp(`Body`, Content, { title: `Main Content` });
     }
     states = () =>
     {
         this.state(`main_pointer`, 0, { triggers: [ Controller.App.move_pointer ] });
         this.state(`key`, '');
+        this.state(`tab_focus`, 0);
     }
     actions = () =>
     {
@@ -334,7 +365,16 @@ class App extends Comp
         this.action(`key_input`, (key) =>
         {
             this.state(`key`, key);
-            this.get_comp(`navigation`).call_action(`key_motion`, key);
+            if(key === Interact.DIR.TAB)
+            {
+                this.state(`tab_focus`, this.state(`tab_focus`) + 1);
+                if(this.state(`tab_focus`) >= this._comps_tabs.length)
+                    this.state(`tab_focus`, 0);
+            }
+            let comp = this.get_comp(this._comps_tabs[this.state(`tab_focus`)]);
+            if(comp)
+                comp.call_action(`key_motion`, key);
+
             //this.get_comp(`Body`).call_action(`navigate`, key);
         });
         
@@ -350,7 +390,8 @@ class App extends Comp
         //[comp:Navigation]
         //[comp:Body]`;
         //return `[comp:Body]`;
-        return `[comp:navigation]`;
+        return `[comp:navigation]
+        [comp:preview]`;
     };
 }
 

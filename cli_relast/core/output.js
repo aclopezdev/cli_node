@@ -25,7 +25,7 @@ module.exports.Print =
     {
         console.clear();
     },
-    print_cols: (bg) =>
+    print_cols: (bg = Style.BgCyan) =>
     {
         let str = ``;
         for(let c = 0; c < this.Print.cols; c++)

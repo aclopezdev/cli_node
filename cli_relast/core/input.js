@@ -51,6 +51,9 @@ const interact =
                 }else if(key === '\r')
                 {
                     dir = interact.DIR.ENTER;
+                }else if(key === '\t')
+                {
+                    dir = interact.DIR.TAB;
                 }
 
                 for(let d of this._dispatchers.nav)
@@ -87,6 +90,7 @@ interact.DIR =
     NONE: 0,
     UP: -1,
     DOWN: 1,
+    TAB: 99,
     ENTER: 1000
 };
 
