@@ -10,6 +10,7 @@ class Comp
     _main = null;
     _parent = null;
     _bbox = null;
+    _app_config = null;
     _comps = {};
     _actions = {};
     _states = [];
@@ -23,6 +24,7 @@ class Comp
         this._props = props || {};
         this._parent = this._props.parent || this;
         this._main = this._props.main || this;
+        this._app_config = this._props.config || {};
 
         if(!this._props._bbox) return;
         this._bbox = this._props.bbox;
@@ -46,6 +48,7 @@ class Comp
         if(!_class) return null;
         props.parent = this;
         props.main = this._main || this;
+        props.config = this._app_config;
         this.add_comp(k, {class: _class, props: props});
         return this._comps[k];
     }
@@ -147,7 +150,7 @@ class Comp
                 let comp = this._comps[comp_name];
                 if(!comp) continue;
                 let comp_body = `${comp._props.title ? Print.subtitle(comp._props.title, false) : ``}${comp.draw ? comp.draw() : ``}`;
-                comp_body = `${ Print.end_of_line() }${ comp.print_comps(comp_body) }`;
+                comp_body = `${ comp.print_comps(comp_body) }`;
                 comp_body = comp.print_controls(comp_body);
                 body = body.replace(c, comp_body);
             }

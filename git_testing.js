@@ -27,7 +27,7 @@ const Git =
                     data = { name: branch.replace(`* `, ''), selected: true };
                 buffer.push(data);
             }
-            if(cback) cback(buffer);
+            if(cback) cback({ data: buffer, text: resp });
         } );
     },
     status: ( cback ) =>
@@ -56,22 +56,10 @@ const Git =
                 else if(type === '??')
                     buffer.untracked.push( { name: file } );
             }
-            if(cback) cback(buffer);
+            if(cback) cback({ data: buffer, text: resp });
         } );
     }
 };
-
-Git.branch( (items) =>
-{
-} );
-Git.status( (items) =>
-{
-} );
-
-
-
-
-
 
 const Controller =
 {
@@ -92,214 +80,86 @@ const Controller =
     }
 };
 
-
-
-
-
-
-
-class Status extends Comp
-{
-    constructor(props)
-    {
-        super(props);
-    }
-    states = () =>
-    {
-        this.state(`resp`, ``);
-    }
-    actions = () =>
-    {
-        this.action(`status`, () =>
-            {
-                Git.status( items =>
-                    {
-                    });
-            });
-    }
-    draw = () =>
-    {
-        Git.status( () => {
-
-        } );
-        return `${ this.state(`resp`) }`;
-    }
-}
-
-
-class Branches extends Comp
-{
-    constructor(props)
-    {
-        super(props);
-    }
-    states = () =>
-    {
-        this.state(`resp`, ``);
-    }
-    actions = () =>
-    {
-        this.action(`load_branches`, () => 
-        {
-            Git.branch( (items) =>
-            {
-            } );
-        });
-    }
-    draw = () =>
-    {
-        return `${ this.state(`resp`) }`;
-    }
-}
-
-
-
-class Step1 extends Controls.Basic_menu
-{
-    constructor(props)
-    {
-        super(props);
-        this.add({ name: `git_branches`, label: `Check local branches` });
-        this.add({ name: `git_status`, label: `Check current status` });
-        this.add({ name: `git_add`, label: `Add files to stage` });
-        this.add({ name: `git_commit`, label: `Commit changes` });
-        this.add({ name: `git_push`, label: `Push to origin` });
-        this.add({ name: `git_fetch`, label: `Fetch from origin` });
-        this.add({ name: `git_pull`, label: `Pull from origin` });
-    }
-    up = () =>
-    {
-        this._index = Math.max(0, this._index - 1);
-    }
-    down = () =>
-    {
-        this._index = Math.min(this._items.length - 1, this._index + 1);
-    }
-    draw = () =>
-    {
-        return `${ this._items.map( (v, i) =>
-            {
-                return `${ this._index === i ? `[-->]` : `[   ]` } ${ v.label }`;
-            }).toString().replace(/\,\s?/g, Print.end_of_line() ) }`;
-    }
-}
-
-
-class Content extends Body
-{
-    _content = [
-        { type: `control`, name: `Main_menu`, _class: Step1, nav: true },
-        { type: `comp`, name: `Git_branches`, _class: Branches, props: { title: `Branches manager` } },
-        { type: `comp`, name: `Git_status`, _class: Status, props: { title: `Git Status` } }
-    ];
-    _trackers = [];
-    constructor(props)
-    {
-        super(props);
-    }
-    components = () =>
-    {
-        for(let c of this._content)
-        {
-            let func = `${ c.type === 'control' ? `add` : `create` }_${ c.type }`;
-            let act = this[func];
-            act(`${ c.name }`, c._class, c.props || {});
-            if(c.nav)
-                this._trackers[c.name] = 0;
-        }
-    }
-    states = () =>
-    {
-        this.state(`trigger`, false);
-        this.state(`step`, 0);
-        this.state(`branch`, ``);
-        this.state(`content`, `Main_menu`);
-    }
-    actions = () =>
-    {
-        this.action(`start`, () =>
-        {
-        });
-        this.action(`navigate`, key =>
-        {
-            if(typeof this._trackers[ this.state(`content`) ] !== 'undefined')
-            {
-                this._trackers[ this.state(`content`) ] += key;
-                let main_menu = this.get_control(`Main_menu`);
-                if(key < 0) main_menu.up();
-                else if(key > 0) main_menu.down();
-            }
-            this.state(`trigger`, !this.state(`trigger`));
-        });
-        this.action(`change_content`, value =>
-        {
-            if(typeof value !== 'string') return;
-            this.state(`content`, value);
-        });
-    }
-    draw = () =>
-    {
-        return `${ this.state(`step`) === 0 ?
-            `[control:Main_menu]`
-        :
-            `[comp:${ this.state(`content`) }]` 
-        }`;
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const Nav_Manifest = {
-    'main':{
-        'tree': [
+    main:{
+        tree: [
             { 
                 name: 'init', 
                 label: 'Git Init',
-                api: [ { name: 'Git_init', args: { type: 'input_text' } } ]
+                onOver: `Api/Global/clear_preview`
             },
             { 
                 name: 'branches', 
                 label: 'Git Branches',
                 action: 'enter',
+                onOver: 'Api/Branches/show_local_list',
                 tree: [ 
-                    { name: 'local_list', label: 'Local branches', onFocus: '', onEnter: '' },
-                    { name: 'checkout', label: 'Checkout', api: [ { name: 'Git_checkout_branch' } ] },
-                    { name: 'create_new_from', label: 'Create new from this branch', api: [ { name: 'Git_new_from_branch' } ] },
-                    { name: 'delete', label: 'Delete', api: [ { name: 'Git_delete_branch' } ] },
+                    { name: 'local_list', label: 'Local branches', onOver: 'Api/Branches/show_local_list', onEnter: 'Api/Branches/load_local_branches' },
+                    { name: 'checkout', label: 'Checkout' },
+                    { name: 'create_new_from', label: 'Create new from this branch' },
+                    { name: 'delete', label: 'Delete' },
                 ]
             },
             {
                 name: 'status',
                 label: 'Git Status',
                 action: 'enter',
+                onOver: 'Api/Status/check_status',
                 tree: [
-                    { name: 'add_file', label: 'Add file', api: [ { name: 'Git_add_file', args: { type: 'input_text' } } ] },
-                    { name: 'add all', label: 'Add all', api: [ { name: 'Git_add_all' } ]}
+                    { name: 'add_file', label: 'Add file', onOver: `Api/Status/check_status` },
+                    { name: 'add all', label: 'Add all' }
                 ]
             }
         ]
     }
 };
 
-
-const App_conf =
+const Git_Api =
 {
-    manifest: Nav_Manifest,
-    actions: {
+    Global:
+    {
+        clear_preview: (args) =>
+        {
+            if(!args.app) return;
+                let preview = args.app.get_comp(`preview`);
+            preview.call_action(`change_content`, { title: args.item.label, content: `` });
+        }
+    },
+    Branches: {
+        show_local_list: ( args ) =>
+        {
+            if(!args.app) return;
+            let preview = args.app.get_comp(`preview`);
+            let nav = args.app.get_comp(`navigation`);
+            Git.branch(res => {
+                preview.call_action(`change_content`, { title: args.item.label, content: Git_tools.text_format(res.text) });
+            });
+        }
+    },
+    Status:
+    {
+        check_status: ( args ) =>
+        {
+            if(!args.app) return;
+            let preview = args.app.get_comp(`preview`);
+            let nav = args.app.get_comp(`navigation`);
+            Git.status(res => {
+                preview.call_action(`change_content`, { title: args.item.label, content: Git_tools.text_format(res.text) });
+            });
+
+        }
     }
 };
 
+const Git_tools =
+{
+     text_format: (txt) =>
+     {
+         let new_txt = txt;
+         new_txt = new_txt.replace(/\n/g, Print.end_of_line() );
+         return new_txt;
+     }
+}
 
 class Navigation extends Nav_System
 {
@@ -325,6 +185,10 @@ class Preview extends Viewer
     {
         super(props);
     }
+    states = () =>
+    {
+        this.state(`content`, ``);
+    }
     actions = () =>
     {
         this.action(`start`, () =>
@@ -334,6 +198,11 @@ class Preview extends Viewer
         {
             this.scrolling(key);
         });
+        this.action(`change_content`, data =>
+            {
+                this.state(`section`, data.title);
+                this.state(`content`, data.content);
+            });
     }
 }
 
@@ -347,9 +216,8 @@ class App extends Comp
     }
     components = () =>
     {
-        this.create_comp(`navigation`, Navigation, { title: `Navigation`, config: App_conf, control: { } });
+        this.create_comp(`navigation`, Navigation, { title: `Navigation`, control: { } });
         this.create_comp(`preview`, Preview, { title: `Actions viewer` });
-        //this.create_comp(`Body`, Content, { title: `Main Content` });
     }
     states = () =>
     {
@@ -374,8 +242,6 @@ class App extends Comp
             let comp = this.get_comp(this._comps_tabs[this.state(`tab_focus`)]);
             if(comp)
                 comp.call_action(`key_motion`, key);
-
-            //this.get_comp(`Body`).call_action(`navigate`, key);
         });
         
     };
@@ -386,10 +252,6 @@ class App extends Comp
     };
     draw = () =>
     {
-        //return `Hello Key: ${ this.state(`key`) } - Pointer: ${ this.state(`main_pointer`) }
-        //[comp:Navigation]
-        //[comp:Body]`;
-        //return `[comp:Body]`;
         return `[comp:navigation]
         [comp:preview]`;
     };
@@ -399,6 +261,8 @@ class App extends Comp
 CLI_Relast.run({
     name: 'git_manager',
     title: 'Git Manager',
+    api: Git_Api,
+    manifest: Nav_Manifest,
     debug: true
 }, App, (fw, app) =>
 {

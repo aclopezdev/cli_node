@@ -67,37 +67,54 @@ class Basic_menu extends Items
     {
         super(props);
     }
-    motion = (motion) =>
+    motion = (motion, cback) =>
     {
         if(motion === Interact.DIR.UP)
-            this.up();
+            this.up(cback);
         else if(motion === Interact.DIR.DOWN)
-            this.down();
+            this.down(cback);
         else if(motion === Interact.DIR.ENTER)
-            this.enter();
+            this.enter(cback);
     }
-    up = () =>
+    up = (cback) =>
     {
         this._index = Math.max( 0, this._index - 1 );
+        this.eval_over(cback);
     }
-    down = () =>
+    down = (cback) =>
     {
         this._index = Math.min( this._index + 1, this._items.length - 1 );
+        this.eval_over(cback);
     }
-    enter = () =>
+    enter = (cback) =>
     {
         let item = this._items[this._index];
         if(!item) return;
-        if(!item.action) return;
-        if(typeof item.action === 'function')
-            item.action(item);
-        else if(typeof item.action === 'string')
+        if(item.action)
         {
-            if(item.action.toLowerCase().trim() === 'enter')
+            if(typeof item.action === 'function')
+                item.action(item);
+            else if(typeof item.action === 'string')
             {
-                if(this._props.onEnter)
-                    this._props.onEnter(item);
+                if(item.action.toLowerCase().trim() === 'enter')
+                {
+                    if(this._props.onEnter)
+                        this._props.onEnter(item);
+                }
             }
+        }
+        if(item.onEnter)
+        {
+            if(cback)
+                cback({ item: item, event: item.onEnter });
+        }
+    }
+    eval_over = (cback) =>
+    {
+        let over = this._items[this._index].onOver;
+        if(!over) return;
+        if(cback){
+            cback({ item: this._items[this._index], event: over });
         }
     }
     draw = () =>
@@ -105,7 +122,7 @@ class Basic_menu extends Items
         let str = ``;
         this._items.forEach( ( v, i ) =>
             {
-                str += `[${ this._index === i ? `--->` : `    ` }] ${ v.label }${ Print.end_of_line() }`;
+                str += `${ this._index === i ? `--->` : `    ` } ${ v.label }${ Print.end_of_line() }`;
             });
         return str;
     }
@@ -127,9 +144,9 @@ class Nav_system extends Control
     {
         this._head = k;
     }
-    motion = (motion) =>
+    motion = (motion, cback) =>
     {
-        this._menu[this._head].motion(motion);
+        this._menu[this._head].motion(motion, cback);
     }
     draw = () =>
     {

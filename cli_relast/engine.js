@@ -67,22 +67,19 @@ const engine =
 class Nav_system extends Comp
 {
     _nav = null;
-    _config = null;
     _manifest = null;
     constructor(props)
     {
         super(props);
         this._nav = new Nav_System_Control(props.control || {});
-        if(props.config)
+        if(this._app_config)
         {
-            this._config = props.config;
-            if(this._config.manifest)
+            if(this._app_config._manifest)
             {
-                this._manifest = this._config.manifest;
+                this._manifest = this._app_config._manifest;
                 this.manifest_decode();
             }
         }
-       
     }
     manifest_decode = () =>
     {
@@ -116,7 +113,13 @@ class Nav_system extends Comp
     }
     navigate_menu = (motion = 0) =>
     {
-        this._nav.motion(motion);
+        this._nav.motion(motion, ( args ) =>
+            {
+                if(!args) return;
+                if(!args.event) return;
+                if(typeof args.event === 'function')
+                    args.event({ item: args.item, app: this._main });
+            });
     }
     draw = () =>
     {
@@ -140,9 +143,9 @@ class viewer extends Comp
     }
     draw = () =>
     {
-        this._print_buffer = `${Print.print_cols()}`;
-        this._print_buffer += `wrehgpierwhgierwgoiwerb${ Print.end_of_line() }`;
-        this._print_buffer += `${Print.print_cols()}`;
+        this._print_buffer = `${ Print.print_cols() }`;
+        this._print_buffer += `${ this.state(`section`) }${ Print.end_of_line() }${ this.state(`content`) }${ Print.end_of_line() }`;
+        this._print_buffer += `${ Print.print_cols() }`;
 
         return this._print_buffer;
     }

@@ -10,10 +10,14 @@ function Relast()
     let run = (props, App) =>
     {
         Print._debug = props.debug || false;
+        App_conf.setup(props.api || {}, props.manifest || {});
+        let app_props = props;
+        app_props.config = App_conf;
         this.app = new App(props);
         Engine.init({
             app: this.app,
-            sync: props.sync || 100
+            sync: props.sync || 100,
+            config: App_conf
         });
         Engine.run();
     }
@@ -21,11 +25,60 @@ function Relast()
     let _public =
     {
         run: run,
-        app: () => { return this.app; }
+        app: () => { return this.app; },
+        config: App_conf
     }
 
     return _public;
 }
+
+const App_conf =
+{
+    _api_data: null,
+    _manifest: null,
+    setup: function(api, manifest)
+    {
+        if(!api || !manifest) return;
+        this._api_data = api;
+        this._manifest = manifest;
+        this.api_in_manifest();
+    },
+    api_in_manifest: function()
+    {
+        if(!this._manifest.main) return;
+        this.track_manifest_node(this._manifest.main);
+    },
+    track_manifest_node: function( node )
+    {
+        if(!node) return;
+        if(typeof node.onOver === `string`)
+        {
+           node.onOver = this.str_2_event(node.onOver); 
+        }
+        if(typeof node.onEnter === 'string')
+        {
+            node.onEnter = this.str_2_event(node.onEnter);
+        }
+        if(!node.tree) return;
+        for(let c of node.tree)
+        {
+            this.track_manifest_node(c);
+        }
+    },
+    str_2_event: function(str)
+    {
+        let api_str = str;
+        let api_path = api_str.split('/');
+        let aux = this._api_data;
+        for(let p of api_path)
+        {
+            if(p === 'Api') continue;
+            if(aux[p])
+                aux = aux[p];
+        }
+        return aux;
+    }
+};
 
 module.exports =
 {

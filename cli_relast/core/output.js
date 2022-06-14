@@ -48,7 +48,7 @@ module.exports.Print =
                 title += ` `;
         }
         title = `${ Style.BgCyan }${ Style.FgBlack }${ title }${ Style.FgBlack }${ Style.Reset }`;
-        let toprint = `${ Style.BgCyan }\n${ line }${ title }\n${ line }${ Style.Reset }\n`;
+        let toprint = `${ Style.BgCyan }\n${ line }${ title }\n${ line }${ Style.Reset }`;
         if(!print) return toprint;
         console.log(toprint);
     },
