@@ -23,11 +23,9 @@ const engine =
     {
         if(!this._root) return;
         Interact.run();
-        this._loop = setInterval(() => 
-            {
-                this.loop();
-            }, this._props.sync);
+        this.start_loop();
 
+        Interact.on(Interact.DISPATCHERS.KILL, () =>{ this.kill(); })
         Interact.on(Interact.DISPATCHERS.NAV, (nav) => 
         {
             if(!this._root) return;
@@ -38,16 +36,37 @@ const engine =
             if(this._root.nav)
                 this._root.nav( { direction: nav.dir, pointer: this._pointer } );
         });
+        Interact.on(Interact.DISPATCHERS.INSERT, ( data ) =>
+        {
+            if(!this._root) return;
+            if(this._root.nav)
+                this._root.nav({ input: data.data });
+            this.start_loop();
+        });
+    },
+    start_loop: function()
+    {
+        this._loop = setInterval(() => 
+            {
+                this.loop();
+            }, this._props.sync);
+    },
+    stop_loop: function()
+    {
+        clearInterval(this._loop);
+        this._loop = null;
     },
     loop: function()
     {
-        Interact.on(Interact.DISPATCHERS.KILL, () =>{ this.kill(); });
         if(!this._root) return;
         
         //RENDERING
         Print.clear();
         this._root.page();
         Print.print_logged();
+
+        if(Interact._state === Interact.STATE.INSERT)
+            this.stop_loop();
     },
     init_kill: function()
     {

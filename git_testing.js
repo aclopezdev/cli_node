@@ -10,6 +10,25 @@ const exec = util.promisify(require('child_process').exec);
 
 const Git =
 {
+    check_local_repo: ( cback ) =>
+    {
+        let cmd = `[ -d ".git" ] && echo "true"`;
+        exec( cmd, ( err, resp ) =>
+        {
+            let exist = Boolean(resp.replace(/\s/g, ''));
+            if(cback)
+                cback( { exist: exist, text: exist ? `Local repo exists!!` : `Local repo does not exist.` } );
+        });
+    },
+    init: ( cback ) =>
+    {
+        let cmd = `git init`;
+        exec( cmd, ( err, resp ) =>
+        {
+            if(cback)
+                cback( { text: resp } );
+        });
+    },
     branch: ( cback ) =>
     {
         let cmd = `git branch`;
@@ -83,10 +102,25 @@ const Controller =
 const Nav_Manifest = {
     main:{
         tree: [
-            { 
-                name: 'init', 
-                label: 'Git Init',
-                onOver: `Api/Global/clear_preview`
+            {
+                name: 'start',
+                label: 'Starting Git',
+                action: 'enter',
+                onOver: 'Api/Global/clear_preview',
+                tree: [
+                    { 
+                        name: 'init', 
+                        label: 'Git Init',
+                        onOver: `Api/Start/check_local_repo`,
+                        onEnter: `Api/Start/init_local_repo`
+                    },
+                    { 
+                        name: 'clone', 
+                        label: 'Git Clone',
+                        onOver: `Api/Start/clone_remote_repo_preview`,
+                        onEnter: `Api/Start/clone_remote_repo`
+                    },
+                ]
             },
             { 
                 name: 'branches', 
@@ -121,9 +155,51 @@ const Git_Api =
         clear_preview: (args) =>
         {
             if(!args.app) return;
-                let preview = args.app.get_comp(`preview`);
+            let preview = args.app.get_comp(`preview`);
             preview.call_action(`change_content`, { title: args.item.label, content: `` });
-        }
+        },
+    },
+    Start:
+    {
+        check_local_repo: ( args ) =>
+        {
+            if(!args.app) return;
+            let preview = args.app.get_comp(`preview`);
+            Git.check_local_repo( res =>
+            {
+                preview.call_action(`change_content`, { title: args.item.label, content: res.text });
+            });
+           
+        },
+        init_local_repo: ( args ) =>
+        {
+            if(!args.app) return;
+            let preview = args.app.get_comp(`preview`);
+            Git.check_local_repo( res =>
+            {
+                if(res.exist)
+                {
+                    preview.call_action(`change_content`, { title: args.item.label, content: res.text });
+                    return;
+                }
+                Git.init( res2 =>
+                {
+                    preview.call_action(`change_content`, { title: args.item.label, content: res2.text });
+                });
+
+            });
+        },
+        clone_remote_repo: ( args ) =>
+        {
+            if(!args.app) return;
+            args.app.call_action(`insert_mode`, input =>
+                {
+                    if(!input) return;
+                    if(!input.data) return;
+                    let remote_repo = input.data;
+                    Log(remote_repo);
+                });
+        },
     },
     Branches: {
         show_local_list: ( args ) =>
@@ -206,6 +282,14 @@ class Preview extends Viewer
     }
 }
 
+class Insert_mode extends Comp
+{
+    constructor(props)
+    {
+        super(props);
+    }
+}
+
 
 class App extends Comp
 {
@@ -218,12 +302,15 @@ class App extends Comp
     {
         this.create_comp(`navigation`, Navigation, { title: `Navigation`, control: { } });
         this.create_comp(`preview`, Preview, { title: `Actions viewer` });
+        this.create_comp(`insert`, Insert_mode, { title: `Write your value:` });
+
     }
     states = () =>
     {
         this.state(`main_pointer`, 0, { triggers: [ Controller.App.move_pointer ] });
         this.state(`key`, '');
         this.state(`tab_focus`, 0);
+        this.state(`insert_mode`, false);
     }
     actions = () =>
     {
@@ -243,17 +330,33 @@ class App extends Comp
             if(comp)
                 comp.call_action(`key_motion`, key);
         });
-        
+        this.action(`insert_mode`, cback =>
+        {
+            this.state(`insert_mode`, true);
+            Interact.set_state(Interact.STATE.INSERT);
+            Interact.on(Interact.DISPATCHERS.INSERT, data =>
+                {
+                    this.state(`insert_mode`, false);
+                    if(cback) cback( data );
+                });
+        });
     };
     nav = (data) =>
     {
+        if(data.input)
+        {
+            if(this.state(`insert_mode`))
+                this.state(`insert_mode`, false);
+            return;
+        }
         this.call_action(`key_input`, data.direction);
         this.state(`main_pointer`, data.pointer);
     };
     draw = () =>
     {
         return `[comp:navigation]
-        [comp:preview]`;
+        [comp:preview]
+        ${ this.state(`insert_mode`) ? `[comp:insert]` : `` }`;
     };
 }
 

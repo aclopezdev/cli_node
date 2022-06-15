@@ -1,6 +1,7 @@
 /*jshint esversion:8*/
 const {Gossipy, GOSSIP} = require('./gossipy');
 const readline = require('readline');
+const {Print} = require('./output');
 const input = readline.createInterface({ input: process.stdin, output: process.stdout });
 const stdin = process.stdin;
 stdin.setRawMode(true);
@@ -11,7 +12,13 @@ const interact =
 {
     _state: 0,
     _dispatchers: { insert: [], nav: [], kill: [] },
-    _exit_key: '\u001B',
+    _exit_key: '\u0003',
+    _esc_key: '\u001B',
+    _buffer_text: '',
+    set_state: function( state )
+    {
+        this._state = state || interact.STATE.NAV;
+    },
     on: function(type, cback)
     {
         if(type === interact.DISPATCHERS.NAV)
@@ -23,21 +30,7 @@ const interact =
     },
     run: function(cback=undefined)
     {
-        input.on(`line`, (data)=>
-        {
-            if(this._state === interact.STATE.INSERT)
-            {
-                for(let d of this._dispatchers.insert)
-                {
-                    if(d) d({ state: interact.STATE.INSERT, data: data });
-                }
-                if(cback)
-                    cback({ state: interact.STATE.INSERT, data: data });
-                this._state = STATE.NAV;
-            }
-        });
-
-        stdin.on('data', (key, args) =>
+        stdin.on('data', (key) =>
         {
             if(this._state === interact.STATE.NAV)
             {
@@ -63,9 +56,28 @@ const interact =
 
                 if(cback)
                     cback({ state: NAV, data: dir, key: key });
+            }else if(this._state === interact.STATE.INSERT)
+            {
+                if(key === '\r')
+                {
+                    for(let d of this._dispatchers.insert)
+                    {
+                        if(d) d({ state: interact.STATE.INSERT, data: this._buffer_text });
+                    }
+                    if(cback)
+                        cback({ state: interact.STATE.INSERT, data: this._buffer_text });
+                    this._state = interact.STATE.NAV;
+                    this._buffer_text = ``;
+                }else{
+                    this._buffer_text += `${key}`;
+                }
             }
 
-            if (key === this._exit_key || key === '\u0003')
+            if(key === this._esc_key)
+            {
+                this._state = interact.STATE.NAV;
+            }else
+            if(key === this._exit_key)
             {
                 for(let d of this._dispatchers.kill)
                 {
