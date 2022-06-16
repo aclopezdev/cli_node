@@ -42,7 +42,7 @@ const engine =
             if(this._root.nav)
                 this._root.nav({ input: data.data });
             this.start_loop();
-        });
+        }, false);
     },
     start_loop: function()
     {

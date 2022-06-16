@@ -197,7 +197,7 @@ const Git_Api =
                     if(!input) return;
                     if(!input.data) return;
                     let remote_repo = input.data;
-                    Log(remote_repo);
+                    //Log(remote_repo);
                 });
         },
     },

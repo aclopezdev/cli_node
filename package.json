@@ -23,5 +23,7 @@
   "bugs": {
     "url": "https://github.com/aclopezdev/cli_node/issues"
   },
-  "homepage": "https://github.com/aclopezdev/cli_node#readme"
+  "homepage": "https://github.com/aclopezdev/cli_node#readme",
+  "dependencies": {
+  }
 }
