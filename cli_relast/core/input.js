@@ -36,17 +36,19 @@ const interact =
         }else if(type === interact.DISPATCHERS.KILL)
             this._dispatchers.kill.push(cback);
     },
-    write_line: function(key)
+    write_line: function(key, key_data)
     {
-        this._buffer_text += key;
+        if(key_data.name === 'backspace')
+        {
+            this._buffer_text = this._buffer_text.length > 0 ? this._buffer_text.substring(0, this._buffer_text.length - 1) : ``;
+        }else{
+            this._buffer_text += key;
+        }
     },
     end_write_line: function( cback )
     {
         this._inserting = false;
         this._state = interact.STATE.NAV;
-        rl.removeAllListeners();
-        stdin.removeAllListeners();
-        this.run(cback);
 
         let data = this._buffer_text;
         this._buffer_text = '';
@@ -62,39 +64,39 @@ const interact =
     },
     run: function(cback)
     {
-        stdin.on('data', (key) =>
+        stdin.on('keypress', (key, key_data) =>
         {
             if(this._state === interact.STATE.NAV)
             {
                 let dir = interact.DIR.NONE;
-                if (key === '\u001B\u005B\u0041')
+                if (key_data.name === 'up')
                 {
                     dir = interact.DIR.UP;
-                }else if (key === '\u001B\u005B\u0042')
+                }else if (key_data.name === 'down')
                 {
                     dir = interact.DIR.DOWN;
-                }else if(key === '\r')
+                }else if(key_data.name === 'return')
                 {
                     dir = interact.DIR.ENTER;
-                }else if(key === '\t')
+                }else if(key_data.name === 'tab')
                 {
                     dir = interact.DIR.TAB;
                 }
 
                 for(let d of this._dispatchers.nav)
                 {
-                    if(d) d({ state: interact.STATE.NAV, dir: dir, key: key });
+                    if(d) d({ state: interact.STATE.NAV, dir: dir, key: key_data });
                 }
 
                 if(cback)
-                    cback({ state: NAV, data: dir, key: key });
+                    cback({ state: NAV, data: dir, key: key_data });
             }else if(this._state === interact.STATE.INSERT && this._inserting)
             {
-                if(key === '\r')
+                if(key_data.name === 'return')
                 {
                     this.end_write_line(cback);
                 }else
-                    this.write_line(key);
+                    this.write_line(key, key_data);
             }
 
             if(key === this._esc_key)
