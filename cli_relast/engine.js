@@ -3,6 +3,7 @@ const {Nav_System_Control, Basic_menu} = require('./controls');
 const {Comp} = require('./comp');
 const {Interact} = require('./core/input');
 const {Print} = require('./core/output');
+const {Engine} = require('.');
 //const {Gossipy} = require('./core/gossipy');
 
 const engine =
@@ -23,6 +24,7 @@ const engine =
     {
         if(!this._root) return;
         Interact.run();
+        this.render();
         this.start_loop();
 
         Interact.on(Interact.DISPATCHERS.KILL, () =>{ this.kill(); })
@@ -34,15 +36,29 @@ const engine =
                 this._pointer = Math.max(0, this._pointer + nav.dir);
           
             if(this._root.nav)
+            {
                 this._root.nav( { direction: nav.dir, pointer: this._pointer } );
+            }
+
+            this.render();
         });
         Interact.on(Interact.DISPATCHERS.INSERT, ( data ) =>
         {
             if(!this._root) return;
             if(this._root.nav)
                 this._root.nav({ input: data.data });
-            this.start_loop();
+            //this.start_loop();
         }, false);
+    },
+    render: function()
+    {
+        Print.clear();
+        this._root.page();
+        Print.print_logged();
+    },
+    update: function()
+    {
+        this.render();
     },
     start_loop: function()
     {
@@ -59,14 +75,9 @@ const engine =
     loop: function()
     {
         if(!this._root) return;
-        
-        //RENDERING
-        Print.clear();
-        this._root.page();
-        Print.print_logged();
 
-        if(Interact._state === Interact.STATE.INSERT)
-            this.stop_loop();
+        //if(Interact._state === Interact.STATE.INSERT)
+        //    this.stop_loop();
     },
     init_kill: function()
     {
@@ -114,10 +125,12 @@ class Nav_system extends Comp
     }
     decode_tree_node = ( node, parent = {} ) =>
     {
+        let menu_ico = ( ( this._manifest || { config: {} } ).config || { menu_ico: '--->' } ).menu_ico || '--->';
+        let menu_empty = ( ( this._manifest || { config: {} } ).config || { menu_empty: '    ' } ).menu_empty || '    ';
         let id = Math.floor( Math.random() * Date.now() );
         node.id = id;
         node.parent = parent.id || -1;
-        let menu = new Basic_menu( { id: id, data: node, onEnter: (item) => { this._nav.select(item.id); } } );
+        let menu = new Basic_menu( { id: id, data: node, onEnter: (item) => { this._nav.select(item.id); }, menu_ico: menu_ico, menu_empty: menu_empty } );
         if(node.tree)
         {
             if(node.parent !== -1)
@@ -136,8 +149,9 @@ class Nav_system extends Comp
             {
                 if(!args) return;
                 if(!args.event) return;
-                if(typeof args.event === 'function')
-                    args.event({ item: args.item, app: this._main });
+                if(typeof args.event === 'function'){
+                    args.event({ item: args.item, app: this._main, engine: engine });
+                }
             });
     }
     draw = () =>
@@ -156,6 +170,8 @@ class viewer extends Comp
     constructor(props)
     {
         super(props);
+
+        this.action(`update`, () => { engine.render() });
     }
     scrolling = (motion = 0) =>
     {

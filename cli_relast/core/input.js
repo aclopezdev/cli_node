@@ -5,6 +5,7 @@ const {Print} = require('./output');
 const input = readline.createInterface({ input: process.stdin, output: process.stdout });
 const rl = readline.createInterface(process.stdin);
 const stdin = process.stdin;
+const stdout = process.stdout;
 stdin.setRawMode(true);
 stdin.resume();
 stdin.setEncoding('utf8');
@@ -16,12 +17,14 @@ const interact =
     _exit_key: '\u0003',
     _esc_key: '\u001B',
     _buffer_text: '',
-    _inserting: false,
+    _inserting: 0,
+    _keypress: null,
+    _cmd: null,
     set_state: function( state )
     {
         this._state = state || interact.STATE.NAV;
         if(state === interact.STATE.INSERT)
-            this._inserting = true;
+            this._inserting = 1;
     },
     on: function(type, cback, nullable=true)
     {
@@ -47,7 +50,7 @@ const interact =
     },
     end_write_line: function( cback )
     {
-        this._inserting = false;
+        this._inserting = 0;
         this._state = interact.STATE.NAV;
 
         let data = this._buffer_text;
@@ -64,7 +67,7 @@ const interact =
     },
     run: function(cback)
     {
-        stdin.on('keypress', (key, key_data) =>
+        this._keypress =  (key, key_data) =>
         {
             if(this._state === interact.STATE.NAV)
             {
@@ -90,13 +93,14 @@ const interact =
 
                 if(cback)
                     cback({ state: NAV, data: dir, key: key_data });
-            }else if(this._state === interact.STATE.INSERT && this._inserting)
+            }else if(this._state === interact.STATE.INSERT && this._inserting === 1)
             {
                 if(key_data.name === 'return')
                 {
                     this.end_write_line(cback);
-                }else
+                }else{
                     this.write_line(key, key_data);
+                }
             }
 
             if(key === this._esc_key)
@@ -112,7 +116,8 @@ const interact =
                 if(cback)
                     cback({ state: interact.STATE.KILL });
             }
-        });
+        }
+        stdin.on('keypress', this._keypress);
     },
 };
 

@@ -3,6 +3,7 @@
 const {Print} = require('./core/output');
 const {Event, EVENT, Events} = require('./core/events');
 const {Interact} = require('./core/input');
+const {Style} = require('./core/color');
 
 class Control
 {
@@ -63,9 +64,13 @@ class Items extends Control
 
 class Basic_menu extends Items
 {
+    _menu_ico = '--->';
+    _menu_empty = '    ';
     constructor(props)
     {
         super(props);
+        this._menu_ico = props.menu_ico || this._menu_ico;
+        this._menu_empty = props.menu_empty || this._menu_empty;
     }
     motion = (motion, cback) =>
     {
@@ -122,7 +127,7 @@ class Basic_menu extends Items
         let str = ``;
         this._items.forEach( ( v, i ) =>
             {
-                str += `${ this._index === i ? `--->` : `    ` } ${ v.label }${ Print.end_of_line() }`;
+                str += `${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ v.label } ${ Style.Reset }${ Print.end_of_line() }`;
             });
         return str;
     }
