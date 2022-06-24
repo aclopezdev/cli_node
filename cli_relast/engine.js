@@ -3,6 +3,7 @@ const {Nav_System_Control, Basic_menu} = require('./controls');
 const {Comp} = require('./comp');
 const {Interact} = require('./core/input');
 const {Print} = require('./core/output');
+const {Engine} = require('.');
 //const {Gossipy} = require('./core/gossipy');
 
 const engine =
@@ -35,7 +36,9 @@ const engine =
                 this._pointer = Math.max(0, this._pointer + nav.dir);
           
             if(this._root.nav)
+            {
                 this._root.nav( { direction: nav.dir, pointer: this._pointer } );
+            }
 
             this.render();
         });
@@ -52,6 +55,10 @@ const engine =
         Print.clear();
         this._root.page();
         Print.print_logged();
+    },
+    update: function()
+    {
+        this.render();
     },
     start_loop: function()
     {
@@ -118,10 +125,12 @@ class Nav_system extends Comp
     }
     decode_tree_node = ( node, parent = {} ) =>
     {
+        let menu_ico = ( ( this._manifest || { config: {} } ).config || { menu_ico: '--->' } ).menu_ico || '--->';
+        let menu_empty = ( ( this._manifest || { config: {} } ).config || { menu_empty: '    ' } ).menu_empty || '    ';
         let id = Math.floor( Math.random() * Date.now() );
         node.id = id;
         node.parent = parent.id || -1;
-        let menu = new Basic_menu( { id: id, data: node, onEnter: (item) => { this._nav.select(item.id); } } );
+        let menu = new Basic_menu( { id: id, data: node, onEnter: (item) => { this._nav.select(item.id); }, menu_ico: menu_ico, menu_empty: menu_empty } );
         if(node.tree)
         {
             if(node.parent !== -1)
@@ -140,8 +149,9 @@ class Nav_system extends Comp
             {
                 if(!args) return;
                 if(!args.event) return;
-                if(typeof args.event === 'function')
-                    args.event({ item: args.item, app: this._main });
+                if(typeof args.event === 'function'){
+                    args.event({ item: args.item, app: this._main, engine: engine });
+                }
             });
     }
     draw = () =>
@@ -160,6 +170,8 @@ class viewer extends Comp
     constructor(props)
     {
         super(props);
+
+        this.action(`update`, () => { engine.render() });
     }
     scrolling = (motion = 0) =>
     {

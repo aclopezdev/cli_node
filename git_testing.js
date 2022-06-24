@@ -5,6 +5,7 @@ const { Nav_Path, Body } = Comps;
 const util = require('util');
 const {Interact} = require('./cli_relast/core/input');
 const exec = util.promisify(require('child_process').exec);
+//const { exec } = require('child_process');
 
 //--------------------------------------------------------------------------------------------------- 
 
@@ -27,6 +28,14 @@ const Git =
         {
             if(cback)
                 cback( { text: resp } );
+        });
+    },
+    clone_repo: ( repo, cback ) =>
+    {
+        let cmd = `git clone ${ repo }`;
+        exec( cmd, ( err, resp ) => {
+            if(cback)
+                cback( { test: resp } );
         });
     },
     branch: ( cback ) =>
@@ -100,6 +109,10 @@ const Controller =
 };
 
 const Nav_Manifest = {
+    config:{
+        menu_ico: ' ',
+        menu_empty: '  '
+    },
     main:{
         tree: [
             {
@@ -192,12 +205,23 @@ const Git_Api =
         clone_remote_repo: ( args ) =>
         {
             if(!args.app) return;
+            let preview = args.app.get_comp(`preview`);
             args.app.call_action(`insert_mode`, input =>
                 {
                     if(!input) return;
                     if(!input.data) return;
                     let remote_repo = input.data;
-                    Log(remote_repo);
+                    Git.check_local_repo( res => {
+                        if(res.exist)
+                        {
+                            preview.call_action(`change_content`, { title: `Error:`, content: `It is impossible clone repository from existed another one.` })
+                            return;
+                        }
+
+                        Git.clone_repo( remote_repo, res => {
+                            preview.call_action(`change_content`, { title: args.item.label, content: Git_tools.text_format(res.text) });
+                        });
+                    });
                 });
         },
     },
@@ -278,6 +302,7 @@ class Preview extends Viewer
             {
                 this.state(`section`, data.title);
                 this.state(`content`, data.content);
+                this.call_action(`update`);
             });
     }
 }
