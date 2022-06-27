@@ -82,6 +82,8 @@ class Basic_menu extends Items
             this.down(cback);
         else if(motion === Interact.DIR.ENTER)
             this.enter(cback);
+        else
+            this.eval_over(cback);
     }
     up = (cback) =>
     {
@@ -122,6 +124,9 @@ class Basic_menu extends Items
     }
     eval_over = (cback) =>
     {
+        let onOver = (this._props || {}).onOver;
+        if(onOver)
+            onOver({ item: this._items[this._index] });
         let over = this._items[this._index].onOver;
         if(!over) return;
         if(cback){

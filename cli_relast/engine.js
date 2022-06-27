@@ -98,6 +98,9 @@ class Nav_system extends Comp
 {
     _nav = null;
     _manifest = null;
+    _grandpa = undefined;
+    _path = [];
+    _menu = null;
     constructor(props)
     {
         super(props);
@@ -107,59 +110,87 @@ class Nav_system extends Comp
             if(this._app_config._manifest)
             {
                 this._manifest = this._app_config._manifest;
-                this.manifest_decode();
+                this.start_level_decode();
             }
         }
     }
-    manifest_decode = () =>
+    start_level_decode = () =>
     {
         if(!this._manifest) return;
         let main = this._manifest.main;
         if(!main) return;
         if(typeof main === 'object')
         {
-            this.decode_tree_node(main);
+            this.decode_tree_level(main);
         }
-        this._nav._head = main.id;
-        this._nav._menu[main.id].add({ name: `exit`, label: `Exit app`, action: () => { engine.init_kill() } });
     }
-    decode_tree_node = ( node, parent = {} ) =>
+    decode_tree_level = ( parent ) =>
     {
-        let menu_ico = ( ( this._manifest || { config: {} } ).config || { menu_ico: '--->' } ).menu_ico || '--->';
-        let menu_empty = ( ( this._manifest || { config: {} } ).config || { menu_empty: '    ' } ).menu_empty || '    ';
-        let id = Math.floor( Math.random() * Date.now() );
-        node.id = id;
-        node.parent = parent.id || -1;
-        let menu = new Basic_menu( { id: id, data: node, onEnter: (item) => { this._nav.select(item.id); }, menu_ico: menu_ico, menu_empty: menu_empty } );
-        if(node.tree)
+        if(typeof parent === 'undefined') 
         {
-            if(node.parent !== -1)
-                menu.add({ name: `back`, label: `Back`, action: () => { this._nav.select(node.parent);} });
-            if(Array.isArray(node.tree))
-            {
-                for(let sm of node.tree)
-                {
-                    menu.add(sm);
-                    this.decode_tree_node(sm, node);
-                }
-            }           
+            this.start_level_decode();
+            return;
         }
-        this._nav.add( id, menu );
+        if(typeof parent.tree !== 'undefined')
+        {
+            let menu_ico = ( ( this._manifest || { config: {} } ).config || { menu_ico: '--->' } ).menu_ico || '--->';
+            let menu_empty = ( ( this._manifest || { config: {} } ).config || { menu_empty: '    ' } ).menu_empty || '    ';
+            if(Array.isArray(parent.tree))
+            {
+                this._menu = new Basic_menu({ 
+                    data: parent, 
+                    onEnter: (args) => { 
+                        this.call_action(`onEnter`, args); 
+                        if(!args.item) return;
+                        if(args.item.onEnter)
+                            if(typeof args.item.onEnter === 'function')
+                                args.item.onEnter({ item: args.item, app: this._main, engine: engine });
+                    }, 
+                    onOver: (args) => { 
+                        this.call_action(`onOver`, args); 
+                        if(!args.item) return;
+                        if(args.item.onOver)
+                            if(typeof args.item.onOver === 'function')
+                                args.item.onOver({ item: args.item, app: this._main, engine: engine });
+                    }, 
+                    menu_ico: menu_ico, 
+                    menu_empty: menu_empty 
+                });
+                if(this._path.length > 0)
+                    this._menu.add({ name: `back`, label: `Back`, action: () => { 
+                        let p = this.remove_path();
+                        this.decode_tree_level(p);
+                    } });
+
+                for(let n of parent.tree)
+                {
+                    this._menu.add(n);
+                }
+                this._menu.motion(Interact.DIR.NONE);
+            }
+            this.save_path(parent);
+        }
+        if(parent === this._manifest.main)
+            this._menu.add({ name: `exit`, label: `Exit app`, action: () => { engine.init_kill() } });
+    }
+    save_path = node =>
+    {
+        this._path.push(node);
+    }
+    remove_path = () =>
+    {
+        let node = this._path[this._path.length - 2];
+        this._path.pop();
+        this._path.pop();
+        return node;
     }
     navigate_menu = (motion = 0) =>
     {
-        this._nav.motion(motion, ( args ) =>
-            {
-                if(!args) return;
-                if(!args.event) return;
-                if(typeof args.event === 'function'){
-                    args.event({ item: args.item, app: this._main, engine: engine });
-                }
-            });
+        this._menu.motion(motion, (args) => { this.call_action(`motion`, args) });
     }
     draw = () =>
     {
-        return `${ this._nav.draw() }`;
+        return `${ this._menu.draw() }`;
     }
 }
 

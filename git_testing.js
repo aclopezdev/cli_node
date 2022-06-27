@@ -169,6 +169,7 @@ const Git_Api =
         {
             if(!args.app) return;
             let preview = args.app.get_comp(`preview`);
+            if(!preview) return;
             preview.call_action(`change_content`, { title: args.item.label, content: `` });
         },
     },
@@ -284,6 +285,14 @@ class Navigation extends Nav_System
             {
                 this.navigate_menu(key);
             });
+        this.action(`onEnter`, args =>
+            {
+                if(typeof args.tree !== 'undefined')
+                    this.decode_tree_level(args);
+            });
+        this.action(`onOver`, args =>
+            {
+            });
     }
 }
 
@@ -323,10 +332,53 @@ class Insert_mode extends Comp
     }
 }
 
+class Interaction_mode extends Nav_System
+{
+    constructor(props)
+    {
+        super(props);
+    }
+}
+
+class Mode_control extends Comp
+{
+    constructor(props)
+    {
+        super(props);
+    }
+    components = () =>
+    {
+        this.create_comp(`insert_mode`, Insert_mode, { title: `Write your value: ` });
+        this.create_comp(`interaction_mode`, Interaction_mode, {});
+    }
+    states = () =>
+    {
+        this.state(`mode`, '');
+    }
+    actions = () =>
+    {
+        this.action(`start`, () =>
+        {
+        });
+        this.action(`key_motion`, key =>
+            {
+                this.navigate_menu(key);
+            });
+        this.action(`set_mode`, ( v = '' ) =>
+            {
+                this.state(`mode`, v);
+            });
+    }
+    draw = () =>
+    {
+        return `${ this.state(`mode`).trim() !== '' ? `[comp:${ this.state(`mode`) }]` : '' }`;
+    }
+}
+
 
 class App extends Comp
 {
-    _comps_tabs = [`navigation`, `preview`];
+    _comps_tabs = [`navigation`, `mode_control`];
     constructor(props)
     {
         super(props);
@@ -335,15 +387,15 @@ class App extends Comp
     {
         this.create_comp(`navigation`, Navigation, { title: `Navigation`, control: { } });
         this.create_comp(`preview`, Preview, { title: `Actions viewer` });
-        this.create_comp(`insert`, Insert_mode, { title: `Write your value:` });
-
+        //this.create_comp(`insert`, Insert_mode, { title: `Write your value:` });
+        this.create_comp(`mode_control`, Mode_control);
     }
     states = () =>
     {
         this.state(`main_pointer`, 0, { triggers: [ Controller.App.move_pointer ] });
         this.state(`key`, '');
         this.state(`tab_focus`, 0);
-        this.state(`insert_mode`, false);
+        //this.state(`insert_mode`, false);
     }
     actions = () =>
     {
@@ -365,11 +417,15 @@ class App extends Comp
         });
         this.action(`insert_mode`, cback =>
         {
-            this.state(`insert_mode`, true);
+            //let mode_control = this.get_comp(`mode_control`);
+            //mode_control.call_action(`set_mode`, `insert_mode`);
+
+            //this.state(`insert_mode`, true);
             Interact.set_state(Interact.STATE.INSERT);
             Interact.on(Interact.DISPATCHERS.INSERT, data =>
                 {
-                    this.state(`insert_mode`, false);
+                    //mode_control.call_action(`set_mode`, '');
+//                    this.state(`insert_mode`, false);
                     if(cback) cback( data );
                 });
         });
@@ -378,8 +434,11 @@ class App extends Comp
     {
         if(data.input)
         {
-            if(this.state(`insert_mode`))
-                this.state(`insert_mode`, false);
+            //let mode_control = this.get_comp(`mode_control`);
+           // if(mode_control.state(`mode`) === 'insert_mode')
+             //   mode_control.call_action(`set_mode`, '');
+            //if(this.state(`insert_mode`))
+                //this.state(`insert_mode`, false);
             return;
         }
         this.call_action(`key_input`, data.direction);
@@ -389,7 +448,8 @@ class App extends Comp
     {
         return `[comp:navigation]
         [comp:preview]
-        ${ this.state(`insert_mode`) ? `[comp:insert]` : `` }`;
+        [comp:mode_control]`;
+        //'${ this.state(`insert_mode`) ? `[comp:insert]` : `` }'
     };
 }
 
