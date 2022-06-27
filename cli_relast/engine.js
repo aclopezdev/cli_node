@@ -135,11 +135,14 @@ class Nav_system extends Comp
         {
             if(node.parent !== -1)
                 menu.add({ name: `back`, label: `Back`, action: () => { this._nav.select(node.parent);} });
-            for(let sm of node.tree)
+            if(Array.isArray(node.tree))
             {
-                menu.add(sm);
-                this.decode_tree_node(sm, node);
-            }
+                for(let sm of node.tree)
+                {
+                    menu.add(sm);
+                    this.decode_tree_node(sm, node);
+                }
+            }           
         }
         this._nav.add( id, menu );
     }

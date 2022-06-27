@@ -60,6 +60,8 @@ class Items extends Control
         if(!item) return;
         this._items.push(item);
     }
+
+    is_selectable = () => { return !this._items[this._index].disabled && !this._items[this._index].caption };
 }
 
 class Basic_menu extends Items
@@ -84,11 +86,15 @@ class Basic_menu extends Items
     up = (cback) =>
     {
         this._index = Math.max( 0, this._index - 1 );
+        if(!this.is_selectable())
+            this._index = Math.max( 0, this._index - 1 );
         this.eval_over(cback);
     }
     down = (cback) =>
     {
         this._index = Math.min( this._index + 1, this._items.length - 1 );
+        if(!this.is_selectable())
+            this._index = Math.min( this._index + 1, this._items.length - 1 );
         this.eval_over(cback);
     }
     enter = (cback) =>
@@ -127,7 +133,10 @@ class Basic_menu extends Items
         let str = ``;
         this._items.forEach( ( v, i ) =>
             {
-                str += `${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ v.label } ${ Style.Reset }${ Print.end_of_line() }`;
+                if(v.caption)
+                    str += `-------------------------${ Print.end_of_line() }${ v.label }:${ Print.end_of_line() }`;
+                else
+                    str += `${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ v.label } ${ Style.Reset }${ Print.end_of_line() }`;
             });
         return str;
     }

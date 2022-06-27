@@ -153,7 +153,7 @@ const Nav_Manifest = {
                 action: 'enter',
                 onOver: 'Api/Status/check_status',
                 tree: [
-                    { name: 'add_file', label: 'Add file', onOver: `Api/Status/check_status` },
+                    { name: 'add_file', label: 'Add file', onOver: `Api/Status/check_status`, onEnter: `Api/Status/load_status_files` },
                     { name: 'add all', label: 'Add all' }
                 ]
             }
@@ -247,6 +247,14 @@ const Git_Api =
                 preview.call_action(`change_content`, { title: args.item.label, content: Git_tools.text_format(res.text) });
             });
 
+        },
+        load_status_files: ( args ) =>
+        {
+            if(!args.app) return;
+            Git.status(res =>
+                {
+                    Log(args);
+                });
         }
     }
 };
