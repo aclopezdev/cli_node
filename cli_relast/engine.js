@@ -96,15 +96,15 @@ const engine =
 
 class Nav_system extends Comp
 {
-    _nav = null;
     _manifest = null;
-    _grandpa = undefined;
     _path = [];
     _menu = null;
     constructor(props)
     {
         super(props);
-        this._nav = new Nav_System_Control(props.control || {});
+    }
+    read_manifest = () =>
+    {
         if(this._app_config)
         {
             if(this._app_config._manifest)
@@ -165,13 +165,19 @@ class Nav_system extends Comp
                 for(let n of parent.tree)
                 {
                     this._menu.add(n);
+                    if(n.group)
+                    {
+                       this._menu.add_subitems(n.tree, n.name); 
+                    }
                 }
                 this._menu.motion(Interact.DIR.NONE);
             }
             this.save_path(parent);
         }
-        if(parent === this._manifest.main)
-            this._menu.add({ name: `exit`, label: `Exit app`, action: () => { engine.init_kill() } });
+        if(this._manifest)
+            if(parent === this._manifest.main)
+                this._menu.add({ name: `exit`, label: `Exit app`, action: () => { engine.init_kill() } });
+        this._menu.commit();
     }
     save_path = node =>
     {

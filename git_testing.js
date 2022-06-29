@@ -4,6 +4,7 @@ const { Relast, Nav_System, Viewer, Comp, Log, Controls, Print } = CLI_Relast;
 const { Nav_Path, Body } = Comps;
 const util = require('util');
 const {Interact} = require('./cli_relast/core/input');
+const {Engine} = require('./cli_relast');
 const exec = util.promisify(require('child_process').exec);
 //const { exec } = require('child_process');
 
@@ -252,9 +253,33 @@ const Git_Api =
         load_status_files: ( args ) =>
         {
             if(!args.app) return;
+            args.app.call_action(`toggle_preview`, false);
+            let control = args.app.get_comp(`mode_control`);
             Git.status(res =>
                 {
-                    Log(args);
+                    let buffer = [];
+                    let stages = [
+                        { name: 'untracked', label: 'Untracked files' },
+                        { name: 'unstaged', label: 'Unstaged files' },
+                        { name: 'staged', label: 'Staged files' }
+                    ];
+                    
+                    for(let s of stages)
+                    {
+                        if(!res.data[s.name]) continue;
+                        let group = { name: s.name, label: s.label, caption: true, group: true, tree: [] };
+
+                        for(let f of res.data[s.name])
+                        {
+                            group.tree.push({
+                                name: `${ f.name }`,
+                                label: `${ f.name }`
+                            });
+                        }
+                        buffer.push(group);
+                    }
+                    control.call_action(`set_mode`, `interaction_mode`);
+                    control.call_action(`start_interaction`, { title: `Git status - Add files`, menu: buffer });
                 });
         }
     }
@@ -275,6 +300,7 @@ class Navigation extends Nav_System
     constructor(props)
     {
         super(props);
+        this.read_manifest();
     }
     actions = () =>
     {
@@ -338,6 +364,23 @@ class Interaction_mode extends Nav_System
     {
         super(props);
     }
+    actions = () =>
+    {
+        this.action(`create_menu`, buffer =>
+            {
+                let root = { tree: buffer };
+                this.decode_tree_level(root);
+            });
+        this.action(`navigate`, key =>
+            {
+                this.navigate_menu(key);
+            });
+        this.action(`clear_menu`, () =>
+            {
+                this._path = [];
+                this._menu = null;
+            });
+    }
 }
 
 class Mode_control extends Comp
@@ -362,16 +405,40 @@ class Mode_control extends Comp
         });
         this.action(`key_motion`, key =>
             {
-                this.navigate_menu(key);
+                if(this.state(`mode`).trim() === 'interaction_mode')
+                    this.get_comp(`interaction_mode`).call_action(`navigate`, key);
             });
         this.action(`set_mode`, ( v = '' ) =>
             {
                 this.state(`mode`, v);
             });
+        this.action(`start_interaction`, data =>
+            {
+                let interact_mode = this.get_comp(`interaction_mode`);
+                interact_mode._props.title = data.title || undefined;
+                ( data.menu || [] ).push({
+                    name: 'exit_menu',
+                    label: 'Exit menu',
+                    onEnter: () => {
+                        this.call_action(`finish_interaction`);
+                    }
+                });
+                interact_mode.call_action(`create_menu`, data.menu);
+                this._main.call_action(`change_tab`, `mode_control`)
+                Engine.update(); 
+            });
+        this.action(`finish_interaction`, () => 
+            {
+                this.get_comp(`interaction_mode`).call_action(`clear_menu`);
+                this._parent.call_action(`toggle_preview`, true);
+                this._parent.call_action(`change_tab`, `navigation`);
+                this.state(`mode`, '');
+                Engine.update();
+            });
     }
     draw = () =>
     {
-        return `${ this.state(`mode`).trim() !== '' ? `[comp:${ this.state(`mode`) }]` : '' }`;
+        return this.state(`mode`).trim() !== '' ? `[comp:${ this.state(`mode`) }]` : '';
     }
 }
 
@@ -387,7 +454,6 @@ class App extends Comp
     {
         this.create_comp(`navigation`, Navigation, { title: `Navigation`, control: { } });
         this.create_comp(`preview`, Preview, { title: `Actions viewer` });
-        //this.create_comp(`insert`, Insert_mode, { title: `Write your value:` });
         this.create_comp(`mode_control`, Mode_control);
     }
     states = () =>
@@ -395,7 +461,7 @@ class App extends Comp
         this.state(`main_pointer`, 0, { triggers: [ Controller.App.move_pointer ] });
         this.state(`key`, '');
         this.state(`tab_focus`, 0);
-        //this.state(`insert_mode`, false);
+        this.state(`show_preview`, true);
     }
     actions = () =>
     {
@@ -415,30 +481,41 @@ class App extends Comp
             if(comp)
                 comp.call_action(`key_motion`, key);
         });
+        this.action(`change_tab`, v =>
+            {
+                for(let c in this._comps_tabs)
+                {
+                    if(this._comps_tabs[c] === v.trim())
+                    {
+                        this.state(`tab_focus`, c);
+                        return;
+                    }
+                }
+            });
         this.action(`insert_mode`, cback =>
         {
-            //let mode_control = this.get_comp(`mode_control`);
-            //mode_control.call_action(`set_mode`, `insert_mode`);
+            let mode_control = this.get_comp(`mode_control`);
+            mode_control.call_action(`set_mode`, `insert_mode`);
 
-            //this.state(`insert_mode`, true);
             Interact.set_state(Interact.STATE.INSERT);
             Interact.on(Interact.DISPATCHERS.INSERT, data =>
                 {
-                    //mode_control.call_action(`set_mode`, '');
-//                    this.state(`insert_mode`, false);
+                    mode_control.call_action(`set_mode`, '');
                     if(cback) cback( data );
                 });
         });
+        this.action(`toggle_preview`, v => 
+            {
+                this.state(`show_preview`, v);
+            });
     };
     nav = (data) =>
     {
         if(data.input)
         {
-            //let mode_control = this.get_comp(`mode_control`);
-           // if(mode_control.state(`mode`) === 'insert_mode')
-             //   mode_control.call_action(`set_mode`, '');
-            //if(this.state(`insert_mode`))
-                //this.state(`insert_mode`, false);
+            let mode_control = this.get_comp(`mode_control`);
+            if(mode_control.state(`mode`) === 'insert_mode')
+                mode_control.call_action(`set_mode`, '');
             return;
         }
         this.call_action(`key_input`, data.direction);
@@ -447,9 +524,8 @@ class App extends Comp
     draw = () =>
     {
         return `[comp:navigation]
-        [comp:preview]
+        ${ this.state(`show_preview`) ? `[comp:preview]` : `` }
         [comp:mode_control]`;
-        //'${ this.state(`insert_mode`) ? `[comp:insert]` : `` }'
     };
 }
 

@@ -50,6 +50,8 @@ class Items extends Control
 {
     _items = [];
     _index = 0;
+    _subitems = [];
+    _print_items = [];
     constructor(props)
     {
         super(props);
@@ -58,7 +60,24 @@ class Items extends Control
     add = (item) =>
     {
         if(!item) return;
+        if(item.group)
+        {
+            item.toggle = false;
+        }
         this._items.push(item);
+    }
+
+    add_subitems = (item, parent_name) =>
+    {
+        if(!item) return;
+        if(Array.isArray(item))
+        {
+            this._subitems[parent_name] = item;
+            return;
+        }
+        if(!this._subitems[parent_name])
+            this._subitems[parent_name] = [];
+        this._subitems[parent_name].push(item);
     }
 
     is_selectable = () => { return !this._items[this._index].disabled && !this._items[this._index].caption };
@@ -74,6 +93,22 @@ class Basic_menu extends Items
         this._menu_ico = props.menu_ico || this._menu_ico;
         this._menu_empty = props.menu_empty || this._menu_empty;
     }
+    commit = () =>
+    {
+        this._print_items = [];
+        for(let i of this._items)
+        {
+            this._print_items.push(i);
+            if(typeof i.toggle !== 'undefined' && i.toggle === true)
+            {
+                for(let si of this._subitems[i.name])
+                {
+                    si.subitem = true;
+                    this._print_items.push(si);
+                }
+            }
+        }
+    }
     motion = (motion, cback) =>
     {
         if(motion === Interact.DIR.UP)
@@ -87,21 +122,19 @@ class Basic_menu extends Items
     }
     up = (cback) =>
     {
-        this._index = Math.max( 0, this._index - 1 );
-        if(!this.is_selectable())
-            this._index = Math.max( 0, this._index - 1 );
+        let offset = 1;
+        this._index = Math.max( 0, this._index - offset );
         this.eval_over(cback);
     }
     down = (cback) =>
     {
-        this._index = Math.min( this._index + 1, this._items.length - 1 );
-        if(!this.is_selectable())
-            this._index = Math.min( this._index + 1, this._items.length - 1 );
+        let offset = 1;
+        this._index = Math.min( this._index + offset, this._print_items.length - 1 );
         this.eval_over(cback);
     }
     enter = (cback) =>
     {
-        let item = this._items[this._index];
+        let item = this._print_items[this._index];
         if(!item) return;
         if(item.action)
         {
@@ -118,30 +151,51 @@ class Basic_menu extends Items
         }
         if(item.onEnter)
         {
-            if(cback)
+            if(cback && !item.group)
                 cback({ item: item, event: item.onEnter });
+        }
+        if(this._props.onEnter && !item.group)
+            this._props.onEnter({item: item})
+        else if(item.group)
+        {
+            item.toggle = !item.toggle;
+            this.commit();
         }
     }
     eval_over = (cback) =>
     {
+        let item = this._print_items[this._index];
+        if(!item) return;
+
         let onOver = (this._props || {}).onOver;
         if(onOver)
-            onOver({ item: this._items[this._index] });
-        let over = this._items[this._index].onOver;
+            onOver({ item: item });
+        let over = item.onOver;
         if(!over) return;
         if(cback){
-            cback({ item: this._items[this._index], event: over });
+            cback({ item: item, event: over });
         }
     }
     draw = () =>
     {
         let str = ``;
-        this._items.forEach( ( v, i ) =>
+        this._print_items.forEach( ( v, i ) =>
             {
-                if(v.caption)
-                    str += `-------------------------${ Print.end_of_line() }${ v.label }:${ Print.end_of_line() }`;
-                else
-                    str += `${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ v.label } ${ Style.Reset }${ Print.end_of_line() }`;
+                let additions = ``;
+                let group_qty = ``;
+                if(v.group)
+                {
+                    additions += `${ v.group ? `[${ v.toggle ? `-` : '+' }] ` : `- ` }`;
+                    group_qty += ` (${ this._subitems[v.name].length })`;
+                }
+                if(v.caption && !v.group)
+                    str += `- ${ v.label }:${ Print.end_of_line() }`;
+                else {
+                    let substr = `${ v.subitem ? ` ﬌ ` : `` }`;
+                    let print_item = `${ substr }${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ additions }${ v.label }${ group_qty } ${ Style.Reset }${ Print.end_of_line() }`;
+               
+                    str += `${ print_item }`;
+                }
             });
         return str;
     }
