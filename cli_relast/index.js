@@ -6,18 +6,23 @@ const { Print } = require('./core/output');
 function Relast()
 {
     let app = null;
+    let _manifest = null;
 
     let run = (props, App) =>
     {
         Print._debug = props.debug || false;
-        App_conf.setup(props.api || {}, props.manifest || {});
+        this._manifest = props.manifest;
+        App_conf.setup(props.api || {});
+        App_conf.api_in_manifest(this._manifest || {});
         let app_props = props;
         app_props.config = App_conf;
+        app_props.manifest = this._manifest;
         this.app = new App(props);
         Engine.init({
             app: this.app,
             sync: props.sync || 100,
-            config: App_conf
+            config: App_conf,
+            manifest: this._manifest
         });
         Engine.run();
     }
@@ -35,20 +40,17 @@ function Relast()
 const App_conf =
 {
     _api_data: null,
-    _manifest: null,
     setup: function(api, manifest)
     {
-        if(!api || !manifest) return;
+        if(!api) return;
         this._api_data = api;
-        this._manifest = manifest;
-        this.api_in_manifest();
     },
-    api_in_manifest: function()
+    api_in_manifest: function(manifest)
     {
-        if(!this._manifest.main) return;
-        this.track_manifest_node(this._manifest.main);
+        if(!manifest.main) return;
+        this.to_api(manifest.main);
     },
-    track_manifest_node: function( node )
+    to_api: function( node )
     {
         if(!node) return;
         if(typeof node.onOver === `string`)
@@ -62,7 +64,7 @@ const App_conf =
         if(!node.tree) return;
         for(let c of node.tree)
         {
-            this.track_manifest_node(c);
+            this.to_api(c);
         }
     },
     str_2_event: function(str)

@@ -81,6 +81,15 @@ class Comp
             this.add_comp(c.name, c.data);
         }
     };
+
+    str_2_api_events = ( str_event ) =>
+    {
+        if(!this._props) return;
+        if(!this._props.config) return;
+        if(typeof str_event !== 'string') return str_event;
+        return this._props.config.str_2_event(str_event);
+    };
+
     state = (k, v = undefined, reducer) =>
     {
         if(v !== undefined && v !== null)

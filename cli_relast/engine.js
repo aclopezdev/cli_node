@@ -102,23 +102,26 @@ class Nav_system extends Comp
     constructor(props)
     {
         super(props);
+        this._manifest = props.manifest || this._manifest;
     }
-    read_manifest = () =>
+    read_manifest = (manifest) =>
     {
-        if(this._app_config)
+        manifest = manifest || this._manifest;
+        if(manifest)
         {
-            if(this._app_config._manifest)
-            {
-                this._manifest = this._app_config._manifest;
-                this.start_level_decode();
-            }
+            this._manifest = manifest;
+            this.start_level_decode();
         }
     }
     start_level_decode = () =>
     {
         if(!this._manifest) return;
         let main = this._manifest.main;
-        if(!main) return;
+        if(!main)
+        {
+            Print.log(`In component's manifest must be a main!!'`);
+            return;
+        }
         if(typeof main === 'object')
         {
             this.decode_tree_level(main);
@@ -133,8 +136,6 @@ class Nav_system extends Comp
         }
         if(typeof parent.tree !== 'undefined')
         {
-            let menu_ico = ( ( this._manifest || { config: {} } ).config || { menu_ico: '--->' } ).menu_ico || '--->';
-            let menu_empty = ( ( this._manifest || { config: {} } ).config || { menu_empty: '    ' } ).menu_empty || '    ';
             if(Array.isArray(parent.tree))
             {
                 this._menu = new Basic_menu({ 
@@ -142,6 +143,7 @@ class Nav_system extends Comp
                     onEnter: (args) => { 
                         this.call_action(`onEnter`, args); 
                         if(!args.item) return;
+                        args.item.onEnter = this.str_2_api_events( args.item.onEnter );
                         if(args.item.onEnter)
                             if(typeof args.item.onEnter === 'function')
                                 args.item.onEnter({ item: args.item, app: this._main, engine: engine });
@@ -149,15 +151,15 @@ class Nav_system extends Comp
                     onOver: (args) => { 
                         this.call_action(`onOver`, args); 
                         if(!args.item) return;
+                        args.item.onOver = this.str_2_api_events( args.item.onOver );
                         if(args.item.onOver)
                             if(typeof args.item.onOver === 'function')
                                 args.item.onOver({ item: args.item, app: this._main, engine: engine });
                     }, 
-                    menu_ico: menu_ico, 
-                    menu_empty: menu_empty 
+                    icos: ( ( this._props || {} ).icos || {} ).menu
                 });
                 if(this._path.length > 0)
-                    this._menu.add({ name: `back`, label: `Back`, action: () => { 
+                    this._menu.add({ name: `back`, label: ` [ Back ]`, action: () => { 
                         let p = this.remove_path();
                         this.decode_tree_level(p);
                     } });
@@ -175,8 +177,8 @@ class Nav_system extends Comp
             this.save_path(parent);
         }
         if(this._manifest)
-            if(parent === this._manifest.main)
-                this._menu.add({ name: `exit`, label: `Exit app`, action: () => { engine.init_kill() } });
+            if(this._props.main_nav)
+                this._menu.add({ name: `exit`, label: ` [ Exit app ]`, permanent: true, action: () => { engine.init_kill() } });
         this._menu.commit();
     }
     save_path = node =>
@@ -196,6 +198,7 @@ class Nav_system extends Comp
     }
     draw = () =>
     {
+        if(!this._menu) return;
         return `${ this._menu.draw() }`;
     }
 }

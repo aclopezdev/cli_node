@@ -87,6 +87,14 @@ const Git =
             }
             if(cback) cback({ data: buffer, text: resp });
         } );
+    },
+    add_file: ( file, cback ) =>
+    {
+        let cmd = `git add ${ file }`;
+        exec( cmd, ( err, resp ) =>
+            {
+                if(cback) cback({ text: resp });
+            });
     }
 };
 
@@ -109,11 +117,18 @@ const Controller =
     }
 };
 
-const Nav_Manifest = {
-    config:{
-        menu_ico: ' ',
-        menu_empty: '  '
+const View_Config = {
+    menu:{
+        index: ' ',
+        space: '  ',
+        group:{
+            open: '',
+            close: '',
+            item: '﬌'
+        }
     },
+};
+const Nav_Manifest = {
     main:{
         tree: [
             {
@@ -273,7 +288,8 @@ const Git_Api =
                         {
                             group.tree.push({
                                 name: `${ f.name }`,
-                                label: `${ f.name }`
+                                label: `${ f.name }`,
+                                onEnter: `Api/Status/add_file`
                             });
                         }
                         buffer.push(group);
@@ -281,6 +297,17 @@ const Git_Api =
                     control.call_action(`set_mode`, `interaction_mode`);
                     control.call_action(`start_interaction`, { title: `Git status - Add files`, menu: buffer });
                 });
+        },
+        add_file: ( args ) =>
+        {
+            if(!args.app) return;
+            Git.add_file(args.item.name, res => 
+                {
+                    Git_Api.Status.load_status_files( args );
+                });
+        },
+        add_all_files: ( args ) =>
+        {
         }
     }
 };
@@ -368,8 +395,9 @@ class Interaction_mode extends Nav_System
     {
         this.action(`create_menu`, buffer =>
             {
-                let root = { tree: buffer };
-                this.decode_tree_level(root);
+                let manifest = { main: { tree: buffer } };
+                this._main._props.config.to_api(manifest);
+                this.read_manifest(manifest);
             });
         this.action(`navigate`, key =>
             {
@@ -392,7 +420,7 @@ class Mode_control extends Comp
     components = () =>
     {
         this.create_comp(`insert_mode`, Insert_mode, { title: `Write your value: ` });
-        this.create_comp(`interaction_mode`, Interaction_mode, {});
+        this.create_comp(`interaction_mode`, Interaction_mode, { icos: View_Config});
     }
     states = () =>
     {
@@ -452,7 +480,7 @@ class App extends Comp
     }
     components = () =>
     {
-        this.create_comp(`navigation`, Navigation, { title: `Navigation`, control: { } });
+        this.create_comp(`navigation`, Navigation, { title: `Navigation`, manifest: this._props.manifest, main_nav: true, icos: View_Config, control: { } });
         this.create_comp(`preview`, Preview, { title: `Actions viewer` });
         this.create_comp(`mode_control`, Mode_control);
     }

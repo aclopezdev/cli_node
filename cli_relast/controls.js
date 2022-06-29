@@ -87,11 +87,24 @@ class Basic_menu extends Items
 {
     _menu_ico = '--->';
     _menu_empty = '    ';
+    _menu_group_close = '[+]';
+    _menu_group_open = '[-]';
+    _menu_group_item = '﬌';
     constructor(props)
     {
         super(props);
-        this._menu_ico = props.menu_ico || this._menu_ico;
-        this._menu_empty = props.menu_empty || this._menu_empty;
+
+        if(props.icos)
+        {
+            this._menu_ico = props.icos.index || this._menu_ico;
+            this._menu_empty = props.icos.space || this._menu_empty;
+            if(props.icos.group)
+            {
+                this._menu_group_open = props.icos.group.open || this._menu_group_open;
+                this._menu_group_close = props.icos.group.close || this._menu_group_close;
+                this._menu_group_item = props.icos.group.item || this._menu_group_item;
+            }
+        }
     }
     commit = () =>
     {
@@ -185,16 +198,18 @@ class Basic_menu extends Items
                 let group_qty = ``;
                 if(v.group)
                 {
-                    additions += `${ v.group ? `[${ v.toggle ? `-` : '+' }] ` : `- ` }`;
+                    additions += `${ v.group ? `${ v.toggle ? this._menu_group_open : this._menu_group_close } ` : `- ` }`;
                     group_qty += ` (${ this._subitems[v.name].length })`;
                 }
                 if(v.caption && !v.group)
                     str += `- ${ v.label }:${ Print.end_of_line() }`;
                 else {
-                    let substr = `${ v.subitem ? ` ﬌ ` : `` }`;
-                    let print_item = `${ substr }${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ additions }${ v.label }${ group_qty } ${ Style.Reset }${ Print.end_of_line() }`;
+                    let substr = `${ v.subitem ? `${ this._menu_empty }${ this._menu_empty }${ this._menu_group_item }` : `` } `;
+                    let permanent = `${ v.permanent && i === this._print_items.length - 1 ? Print.end_of_line() : `` }`;
+
+                    let print_item = `${ this._index === i ? `${ Style.FgBlue }${ this._menu_ico }${ Style.Reset }` : this._menu_empty } ${ this._index === i ? Style.BgBlue : Style.Reset } ${ additions }${ substr }${ v.label }${ group_qty } ${ Style.Reset }${ Print.end_of_line() }`;
                
-                    str += `${ print_item }`;
+                    str += `${ permanent }${ print_item }`;
                 }
             });
         return str;
