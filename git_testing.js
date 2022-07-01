@@ -274,9 +274,17 @@ const Git_Api =
                 {
                     let buffer = [];
                     let stages = [
-                        { name: 'untracked', label: 'Untracked files' },
-                        { name: 'unstaged', label: 'Unstaged files' },
-                        { name: 'staged', label: 'Staged files' }
+                        { name: 'untracked', label: 'Untracked files', actions: [
+                            { name: 'to_staged', label: 'Stage this file', onEnter: 'Api/Status/add_file' }
+                        ] },
+                        { name: 'unstaged', label: 'Unstaged files', actions:[
+                            { name: 'to_clear', label: 'Remove this file', onEnter: 'Api/Status/clear_file' },
+                            { name: 'to_staged', label: 'Stage this file', onEnter: 'Api/Status/add_file' }
+                        ]},
+                        { name: 'staged', label: 'Staged files', actions: [
+                            { name: 'to_clear', label: 'Remove this file', onEnter: 'Api/Status/clear_file' },
+                            { name: 'to_unstage', label: 'Unstage this file', onEnter: 'Api/Status/unstage_file' }
+                        ] }
                     ];
                     
                     for(let s of stages)
@@ -289,8 +297,16 @@ const Git_Api =
                             group.tree.push({
                                 name: `${ f.name }`,
                                 label: `${ f.name }`,
-                                onEnter: `Api/Status/add_file`
+                                //action: `enter`,
+                                caption: true,
+                                group: true
                             });
+                            if(s.actions && Array.isArray(s.actions))
+                            {
+                                for(let a in s.actions)
+                                    s.actions[a].ref = f;
+                                group.tree[group.tree.length - 1].tree = s.actions;
+                            }
                         }
                         buffer.push(group);
                     }
@@ -301,7 +317,7 @@ const Git_Api =
         add_file: ( args ) =>
         {
             if(!args.app) return;
-            Git.add_file(args.item.name, res => 
+            Git.add_file(args.item.ref ? args.item.ref.name : args.item.name, res => 
                 {
                     Git_Api.Status.load_status_files( args );
                 });
@@ -396,7 +412,7 @@ class Interaction_mode extends Nav_System
         this.action(`create_menu`, buffer =>
             {
                 let manifest = { main: { tree: buffer } };
-                this._main._props.config.to_api(manifest);
+                manifest = this._props.config.api_in_manifest(manifest);
                 this.read_manifest(manifest);
             });
         this.action(`navigate`, key =>
@@ -407,6 +423,14 @@ class Interaction_mode extends Nav_System
             {
                 this._path = [];
                 this._menu = null;
+            });
+        this.action(`onEnter`, args =>
+            {
+                if(typeof args.tree !== 'undefined')
+                    this.decode_tree_level(args);
+            });
+        this.action(`onOver`, args =>
+            {
             });
     }
 }

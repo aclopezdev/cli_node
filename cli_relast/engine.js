@@ -164,12 +164,27 @@ class Nav_system extends Comp
                         this.decode_tree_level(p);
                     } });
 
+                let add_subitems = (node) =>
+                {
+                    this._menu.add_subitems(node.tree, node.name);
+                    for(let n of node.tree)
+                    {
+                        if(typeof n === 'undefined') continue;
+                        if(n.group)
+                        {
+                            add_subitems(n);
+                        }
+                    }
+                }
+
                 for(let n of parent.tree)
                 {
+                    if(typeof n === 'undefined') continue;
                     this._menu.add(n);
                     if(n.group)
                     {
-                       this._menu.add_subitems(n.tree, n.name); 
+                        add_subitems(n);
+                       //this._menu.add_subitems(n.tree, n.name); 
                     }
                 }
                 this._menu.motion(Interact.DIR.NONE);

@@ -199,7 +199,7 @@ class Basic_menu extends Items
                 if(v.group)
                 {
                     additions += `${ v.group ? `${ v.toggle ? this._menu_group_open : this._menu_group_close } ` : `- ` }`;
-                    group_qty += ` (${ this._subitems[v.name].length })`;
+                    group_qty += ` (${ this._subitems[v.name] ? this._subitems[v.name].length : `void` })`;
                 }
                 if(v.caption && !v.group)
                     str += `- ${ v.label }:${ Print.end_of_line() }`;
