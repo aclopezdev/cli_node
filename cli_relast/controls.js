@@ -50,11 +50,12 @@ class Items extends Control
 {
     _items = [];
     _index = 0;
-    _subitems = [];
+    _childs = [];
     _print_items = [];
     constructor(props)
     {
         super(props);
+        this._items = props.items && Array.isArray(props.items) ? props.items : [];
     }
 
     add = (item) =>
@@ -72,12 +73,12 @@ class Items extends Control
         if(!item) return;
         if(Array.isArray(item))
         {
-            this._subitems[parent_name] = item;
+            this._childs[parent_name] = new Items({ items: item });
             return;
         }
-        if(!this._subitems[parent_name])
-            this._subitems[parent_name] = [];
-        this._subitems[parent_name].push(item);
+        if(!this._childs[parent_name])
+            this._childs[parent_name] = new Items();
+        this._subitems[parent_name].add(item);
     }
 
     is_selectable = () => { return !this._items[this._index].disabled && !this._items[this._index].caption };
@@ -108,18 +109,21 @@ class Basic_menu extends Items
     }
     commit = () =>
     {
+        let commit_recursive = ( item ) =>
+        {
+            if(typeof item.toggle === 'undefined' || !item.toggle) return;
+            for(let i of this._childs[item.name]._items)
+            {
+                i.subitem = true;
+                this._print_items.push(i);
+                commit_recursive(i);
+            }
+        }
         this._print_items = [];
         for(let i of this._items)
         {
             this._print_items.push(i);
-            if(typeof i.toggle !== 'undefined' && i.toggle === true)
-            {
-                for(let si of this._subitems[i.name])
-                {
-                    si.subitem = true;
-                    this._print_items.push(si);
-                }
-            }
+            commit_recursive(i);
         }
     }
     motion = (motion, cback) =>
@@ -199,7 +203,7 @@ class Basic_menu extends Items
                 if(v.group)
                 {
                     additions += `${ v.group ? `${ v.toggle ? this._menu_group_open : this._menu_group_close } ` : `- ` }`;
-                    group_qty += ` (${ this._subitems[v.name] ? this._subitems[v.name].length : `void` })`;
+                    group_qty += ` (${ this._childs[v.name] ? this._childs[v.name]._items.length : `void` })`;
                 }
                 if(v.caption && !v.group)
                     str += `- ${ v.label }:${ Print.end_of_line() }`;

@@ -33,13 +33,23 @@ class Comp
     init = () =>
     {
         if(this.states)
-            this.states();
+            this.states(this._props);
         if(this.components)
-            this.components();
+            this.components(this._props);
         if(this.controls)
-            this.controls();
+            this.controls(this._props);
         if(this.actions)
-            this.actions();
+            this.actions(this._props);
+        if(this.app_logic)
+            this.app_logic(this._props);
+        if(typeof this._props.helpers && Array.isArray(this._props.helpers))
+        {
+            for(let h of this._props.helpers)
+            {
+                if(typeof h === 'function')
+                    h({ self: this, props: this._props });
+            }
+        }
         this.call_action(`start`);
     }
 

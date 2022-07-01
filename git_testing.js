@@ -6,7 +6,6 @@ const util = require('util');
 const {Interact} = require('./cli_relast/core/input');
 const {Engine} = require('./cli_relast');
 const exec = util.promisify(require('child_process').exec);
-//const { exec } = require('child_process');
 
 //--------------------------------------------------------------------------------------------------- 
 
@@ -95,8 +94,89 @@ const Git =
             {
                 if(cback) cback({ text: resp });
             });
+    },
+    add_all: ( cback ) =>
+    {
+        let cmd = `git add .`;
+        exec( cmd, ( err, resp ) =>
+            {
+                if(cback) cback({ text: resp });
+            });
+    },
+    reset_file: ( file, cback ) =>
+    {
+        let cmd = `git reset ${ file }`;
+        exec( cmd, ( err, resp ) =>
+            {
+                if(cback) cback({ text: resp });
+            })
+    },
+    reset_all: ( cback ) =>
+    {
+        let cmd = `git reset`;
+        exec( cmd, ( err, resp ) =>
+            {
+                if(cback) cback({ text: resp });
+            });
     }
 };
+
+
+const Git_model =
+{
+    Status:{
+        bind_ui_status: ( res ) =>
+        {
+            let buffer = [];
+            let stages = [
+                { name: 'untracked', label: 'Untracked files', actions: [
+                    { name: 'to_staged', label: 'Stage this file', onEnter: 'Api/Status/add_file' }
+                ] },
+                { name: 'unstaged', label: 'Unstaged files', actions:[
+                    { name: 'to_clear', label: 'Remove this file', onEnter: 'Api/Status/clear_file' },
+                    { name: 'to_staged', label: 'Stage this file', onEnter: 'Api/Status/add_file' }
+                ]},
+                { name: 'staged', label: 'Staged files', actions: [
+                    { name: 'to_clear', label: 'Remove this file', onEnter: 'Api/Status/clear_file' },
+                    { name: 'to_unstage', label: 'Unstage this file', onEnter: 'Api/Status/unstage_file' }
+                ] }
+            ];
+            
+            for(let s of stages)
+            {
+                if(!res.data[s.name]) continue;
+                let group = { name: s.name, label: s.label, caption: true, group: true, tree: [] };
+
+                for(let f of res.data[s.name])
+                {
+                    let file = {
+                        name: `${ f.name }`,
+                        label: `${ f.name }`,
+                    };
+                    if(Nav_Manifest.uix_rules.git_status_actions === 'group')
+                    {
+                        file.caption = true;
+                        file.group = true;
+                    }else if(Nav_Manifest.uix_rules.git_status_actions === 'depth')
+                    {
+                        file.action = 'enter';
+                    }
+                    if(s.actions && Array.isArray(s.actions))
+                    {
+                        for(let a in s.actions)
+                            s.actions[a].ref = f;
+                        file.tree = s.actions;
+                    }
+
+                    group.tree.push(file);
+                }
+                buffer.push(group);
+            }
+            return buffer;
+        }
+    }
+};
+
 
 const Controller =
 {
@@ -129,6 +209,9 @@ const View_Config = {
     },
 };
 const Nav_Manifest = {
+    uix_rules: {
+        git_status_actions: 'group'
+    },
     main:{
         tree: [
             {
@@ -169,8 +252,19 @@ const Nav_Manifest = {
                 action: 'enter',
                 onOver: 'Api/Status/check_status',
                 tree: [
-                    { name: 'add_file', label: 'Add file', onOver: `Api/Status/check_status`, onEnter: `Api/Status/load_status_files` },
-                    { name: 'add all', label: 'Add all' }
+                    { name: 'manage_file', label: 'Manage file', onOver: `Api/Status/check_status`, onEnter: `Api/Status/load_status_files` },
+                    { name: 'add_all', label: 'Add all', onEnter: 'Api/Status/add_all' },
+                    { name: 'unstage_all', label: 'Unstage all', onEnter: 'Api/Status/unstage_all' }
+                ]
+            },
+            {
+                name: 'commit',
+                label: 'Commits manager',
+                action: 'enter',
+                onOver: 'Api/Global/clear_preview',
+                tree: [
+                    { name: 'new_commit', label: 'New commit', onOver: 'Api/Commit/is_commitable', onEnter: 'Api/Commit/new_commit' },
+                    { name: 'commit_list', label: 'Commits', onEnter: 'Api/Commit/show_commit_list' }
                 ]
             }
         ]
@@ -272,58 +366,48 @@ const Git_Api =
             let control = args.app.get_comp(`mode_control`);
             Git.status(res =>
                 {
-                    let buffer = [];
-                    let stages = [
-                        { name: 'untracked', label: 'Untracked files', actions: [
-                            { name: 'to_staged', label: 'Stage this file', onEnter: 'Api/Status/add_file' }
-                        ] },
-                        { name: 'unstaged', label: 'Unstaged files', actions:[
-                            { name: 'to_clear', label: 'Remove this file', onEnter: 'Api/Status/clear_file' },
-                            { name: 'to_staged', label: 'Stage this file', onEnter: 'Api/Status/add_file' }
-                        ]},
-                        { name: 'staged', label: 'Staged files', actions: [
-                            { name: 'to_clear', label: 'Remove this file', onEnter: 'Api/Status/clear_file' },
-                            { name: 'to_unstage', label: 'Unstage this file', onEnter: 'Api/Status/unstage_file' }
-                        ] }
-                    ];
-                    
-                    for(let s of stages)
-                    {
-                        if(!res.data[s.name]) continue;
-                        let group = { name: s.name, label: s.label, caption: true, group: true, tree: [] };
-
-                        for(let f of res.data[s.name])
-                        {
-                            group.tree.push({
-                                name: `${ f.name }`,
-                                label: `${ f.name }`,
-                                //action: `enter`,
-                                caption: true,
-                                group: true
-                            });
-                            if(s.actions && Array.isArray(s.actions))
-                            {
-                                for(let a in s.actions)
-                                    s.actions[a].ref = f;
-                                group.tree[group.tree.length - 1].tree = s.actions;
-                            }
-                        }
-                        buffer.push(group);
-                    }
-                    control.call_action(`set_mode`, `interaction_mode`);
-                    control.call_action(`start_interaction`, { title: `Git status - Add files`, menu: buffer });
+                    control.call_action(`resp:git_status`, res);
                 });
         },
         add_file: ( args ) =>
         {
             if(!args.app) return;
+            let control = args.app.get_comp(`mode_control`);
             Git.add_file(args.item.ref ? args.item.ref.name : args.item.name, res => 
                 {
+                    control.call_action(`resp:git_add_file`, args);
                     Git_Api.Status.load_status_files( args );
                 });
         },
-        add_all_files: ( args ) =>
+        add_all: ( args ) =>
         {
+            if(!args.app) return;
+            let control = args.app.get_comp(`mode_control`);
+            Git.add_all( res =>
+                {
+                    control.call_action(`resp:git_add_all`, args);
+                    Git_Api.Status.load_status_files( args );
+                });
+        },
+        unstage_file: ( args ) =>
+        {
+            if(!args.app) return;
+            let control = args.app.get_comp(`mode_control`);
+            Git.reset_file(args.item.ref ? args.item.ref.name : args.item.name, res => 
+                {
+                    control.call_action(`resp:git_reset_file`, args);
+                    Git_Api.Status.load_status_files( args );
+                });
+        },
+        unstage_all: ( args ) =>
+        {
+            if(!args.app) return;
+            let control = args.app.get_comp(`mode_control`);
+            Git.reset_all( res =>
+                {
+                    control.call_action(`resp:git_reset_all`, args);
+                    Git_Api.Status.load_status_files( args );
+                });
         }
     }
 };
@@ -432,6 +516,10 @@ class Interaction_mode extends Nav_System
         this.action(`onOver`, args =>
             {
             });
+        this.action(`clear_path`, () =>
+            {
+                this.clear_path();
+            });
     }
 }
 
@@ -486,6 +574,35 @@ class Mode_control extends Comp
                 this._parent.call_action(`change_tab`, `navigation`);
                 this.state(`mode`, '');
                 Engine.update();
+            });
+    }
+    app_logic = () =>
+    {
+        this.action(`resp:git_status`, res =>
+            {
+                let buffer = Git_model.Status.bind_ui_status(res);
+                this.call_action(`set_mode`, `interaction_mode`);
+                this.call_action(`start_interaction`, { title: `Git status - Add files`, menu: buffer });
+            });
+        this.action(`resp:git_add_file`, data => 
+            {
+                if(Nav_Manifest.uix_rules.git_status_actions === 'group')
+                    this.get_comp(`interaction_mode`).call_action(`clear_path`);
+            });
+        this.action(`resp:git_add_all`, data => 
+            {
+                if(Nav_Manifest.uix_rules.git_status_actions === 'group')
+                    this.get_comp(`interaction_mode`).call_action(`clear_path`);
+            });
+        this.action(`resp:git_reset_file`, data => 
+            {
+                if(Nav_Manifest.uix_rules.git_status_actions === 'group')
+                    this.get_comp(`interaction_mode`).call_action(`clear_path`);
+            });
+        this.action(`resp:git_reset_all`, data => 
+            {
+                if(Nav_Manifest.uix_rules.git_status_actions === 'group')
+                    this.get_comp(`interaction_mode`).call_action(`clear_path`);
             });
     }
     draw = () =>

@@ -200,6 +200,10 @@ class Nav_system extends Comp
     {
         this._path.push(node);
     }
+    clear_path = () =>
+    {
+        this._path = [];
+    }
     remove_path = () =>
     {
         let node = this._path[this._path.length - 2];
