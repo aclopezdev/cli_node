@@ -1,6 +1,6 @@
 {
   "name": "kamiloid_cli_node",
-  "version": "1.0.0",
+  "version": "0.0.5",
   "description": "Interactive CLI App",
   "main": "index.js",
   "scripts": {

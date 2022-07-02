@@ -252,6 +252,7 @@ module.exports =
 {
     Engine: engine,
     Nav_System: Nav_system,
-    Viewer: viewer
+    Viewer: viewer,
+    Interact: Interact
 }
 

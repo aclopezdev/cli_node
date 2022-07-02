@@ -1,10 +1,16 @@
 /*jshint esversion: 8*/
+const { Kix } = require('./index');
+const { CLI_Relast, Comps } = Kix; 
+const { Relast, Nav_System, Engine, Interact, Viewer, Comp, Log, Controls, Print } = CLI_Relast;
+/*
 const { CLI_Relast, Comps } = require('./index');
 const { Relast, Nav_System, Viewer, Comp, Log, Controls, Print } = CLI_Relast;
 const { Nav_Path, Body } = Comps;
-const util = require('util');
 const {Interact} = require('./cli_relast/core/input');
 const {Engine} = require('./cli_relast');
+*/
+
+const util = require('util');
 const exec = util.promisify(require('child_process').exec);
 
 //--------------------------------------------------------------------------------------------------- 
@@ -73,7 +79,7 @@ const Git =
             {
                 if(i.trim() === '') continue;
                 let file = i.trim();
-                let type_match = file.match(/[M\s|M\s\s|MM\s|\?\?\s|D\s|D\s\s|DD\s]+/gm);
+                let type_match = file.match(/[A\s|A\s\s|AA\s|M\s|M\s\s|MM\s|\?\?\s|D\s|D\s\s|DD\s]+/gm);
                 if(type_match.length <= 0) continue;
                 let type = type_match[0];
                 file = file.replace(type_match[0], '');
