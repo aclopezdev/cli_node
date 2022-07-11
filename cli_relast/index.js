@@ -124,6 +124,7 @@ const App_conf =
 
 module.exports =
 {
+    Reducer: require('./core/reducer'),
     Comp: require('./comp').Comp,
     Controls: require('./controls'),
     Engine: Engine,

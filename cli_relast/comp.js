@@ -2,11 +2,13 @@
 
 const {Gossipy} = require('./core/gossipy');
 const {Print} = require('./core/output');
+const Reducer = require('./core/reducer');
 const controls = require('./controls');
 
 class Comp 
 {
     _props = null;
+    _name = '';
     _main = null;
     _parent = null;
     _bbox = null;
@@ -21,13 +23,13 @@ class Comp
     _reducers = [];
     constructor(props)
     {
+        this._name = props.name;
         this._props = props || {};
         this._parent = this._props.parent || this;
         this._main = this._props.main || this;
         this._app_config = this._props.config || {};
 
-        if(!this._props._bbox) return;
-        this._bbox = this._props.bbox;
+        this._bbox = this._props.bbox || this._name;
     }
 
     init = () =>
@@ -50,35 +52,28 @@ class Comp
                     h({ self: this, props: this._props });
             }
         }
-        this.call_action(`start`);
+        this.action(`start`);
     }
 
-    create_comp = (k, _class, props = {}) =>
-    {
-        if(!_class) return null;
-        props.parent = this;
-        props.main = this._main || this;
-        props.config = this._app_config;
-        this.add_comp(k, {class: _class, props: props});
-        return this._comps[k];
-    }
-
-    get_comp = (name) =>
+    comp = (name) =>
     {
         if(!name) return null;
         if(typeof name !== 'string') return null;
         return this._comps[name];
     }
 
-    add_comp = (name, data) =>
+    add_comp = (Class, name, props = {}) =>
     {
-        if(!data || !name) return;
-        if(typeof name !== 'string' || typeof data !== 'object') return;
-        if(!data.class) return;
-        if(typeof data.class !== 'function') return;
-        data.name = name;
-        data.bbox = data.bbox || this;
-        this._comps[name] = new data.class(data.props);
+        if(typeof Class !== 'undefined' || typeof name !== 'string') return;
+
+        props.name = name;
+        props.bbox = data.bbox || this;
+        props.class = Class;
+        props.parent = this;
+        props.main = this._main || this;
+        props.config = this._app_config;
+
+        this._comps[name] = new Class(props);
         this._comps[name].init();
     }
 
@@ -88,7 +83,7 @@ class Comp
         {
             if(typeof c !== 'object') continue;
             if(!c.name || typeof c.name !== 'string') continue;
-            this.add_comp(c.name, c.data);
+            this.add_comp(c.class, c.name, c.props);
         }
     };
 
@@ -100,7 +95,7 @@ class Comp
         return this._props.config.str_2_event(str_event);
     };
 
-    state = (k, v = undefined, reducer) =>
+    state = (k, v = undefined) =>
     {
         if(v !== undefined && v !== null)
         {
@@ -110,37 +105,11 @@ class Comp
             if(keeper !== undefined && keeper !== null)
             {
                 this._prev_states[k] = keeper;
-            }else{
-                if(reducer)
-                    this.reduce(k, reducer.triggers || []);
             }
-
-            this.fire_reduce(k, (reducer || {}).args || {});
+            Reducer.call(this._name, k, { self: this, state_name: k, last_state: this._prev_states[k], state: this._states[k] });
         }else{
             return this._states[k];
         }
-    };
-
-    reduce = (state, triggers) =>
-    {
-        if(!state || !triggers) return;
-        this._reducers[state] = triggers;
-    };
-
-    fire_reduce = (state, args = {}) =>
-    {
-        if(!state) return;
-        if(!this._reducers[state]) return;
-        let buffer = this._reducers[state];
-        if(!buffer) return;
-        args.value = this._states[state];
-        args.prev_value = this._prev_states[state];
-        args.me = this;
-        args.parent = this._parent;
-        args.main = this._main;
-        for(let trigger of buffer)
-            if(typeof trigger === 'function') 
-                trigger(args);
     };
 
     get_control = (k) =>
@@ -194,20 +163,14 @@ class Comp
         return body;
     }
 
-    action = (k, action) =>
+    action = (k, action = {}) =>
     {
-        this._actions[k] = action;
-    }
-
-    call_action = (k, args = {}) =>
-    {
-        if(this._actions)
-        {
-            if(this._actions[k])
-            {
-                this._actions[k](args);
-            }
-        }
+        if(typeof k !== 'string') return;
+        if(typeof action === 'function')
+            return this._actions[k] = action;
+        if(typeof this._actions[k] === 'function')
+            return this._actions[k]( this, action, this._props );
+        return;
     }
 
     page = () =>
