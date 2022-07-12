@@ -3,8 +3,11 @@ const {Nav_System_Control, Basic_menu} = require('./controls');
 const {Comp} = require('./comp');
 const {Interact} = require('./core/input');
 const {Print} = require('./core/output');
-const {Engine} = require('.');
-//const {Gossipy} = require('./core/gossipy');
+
+
+const { Render_Panel } = require('../comps/index');
+const Screen = require('./core/screen');
+
 
 const engine =
 {
@@ -19,6 +22,17 @@ const engine =
         this._root = props.app;
         if(this._root.init)
             this._root.init();
+
+        if(this._root instanceof Render_Panel)
+        {
+            this._root.config_render_area({
+                x: 0,
+                y: 0,
+                w: Screen._cols,
+                h: Screen._rows,
+                zindex: 1,
+            });
+        }
     },
     run: function()
     {
@@ -53,7 +67,13 @@ const engine =
     render: function()
     {
         Print.clear();
-        this._root.page();
+        if(this._root instanceof Render_Panel)
+        {
+            this._root.render();
+        }else
+        {
+            this._root.page();
+        }
         Print.print_logged();
     },
     update: function()

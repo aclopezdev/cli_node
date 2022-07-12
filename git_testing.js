@@ -31,16 +31,11 @@ class Nav_Controller extends Comp
     {
         this.action(`nav`, (self, args, props) =>
             {
-                Log(args);
             });
-    }
-    draw = () =>
-    {
-        return `gegegergeeg`;
     }
 }
 
-class App extends Comp
+class App extends Comps.Render_Panel
 {
     constructor(props)
     {
@@ -111,7 +106,7 @@ class App extends Comp
     };
     nav = (data) =>
     {
-        this.comp(`Navigator`).action(`nav`);
+        //this.comp(`Navigator`).action(`nav`);
         /*
         if(data.input)
         {
@@ -124,12 +119,7 @@ class App extends Comp
         this.state(`main_pointer`, data.pointer);
         */
     };
-    draw = () =>
-    {
-        return `[comp:Navigator]`;
-    };
 }
-
 
 CLI_Relast.run({
     name: 'ui_testing',

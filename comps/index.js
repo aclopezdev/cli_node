@@ -1,4 +1,5 @@
 const { Comp } = require('../cli_relast/comp.js');
+const UI = require('../cli_relast/core/ui.js');
 
 function bread_crumb(txt, item)
 {
@@ -74,8 +75,57 @@ class Body extends Comp
 	}
 }
 
+///////////////////////////////////////////////////////////////////
+
+class Base extends Comp
+{
+    _child_indexer = [];
+    _childs = [];
+    constructor(props)
+    {
+        super(props);
+    }
+
+    add_childs = (k, child) =>
+    {
+        if(typeof k !== 'string' || typeof child === 'undefined') return;
+        this._childs.push(child);
+    }
+}
+
+class Render_Panel extends Base
+{
+    _window = null;
+    constructor(props)
+    {
+        super(props);
+    }
+    config_render_area = (props) =>
+    {
+        this._window = new UI.Window(props);
+    }
+
+    render = () =>
+    {
+        console.log(`ewiufhwirghf`);
+        console.log(process.stdout.isTTY);
+    }
+}
+
+class Window_prefab extends Render_Panel
+{
+    constructor(props)
+    {
+        super(props);
+    }
+}
+
 module.exports =
 {
 	Nav_Path: Nav_Path,
-	Body: Body
+    Base: Base,
+    Render_Panel: Render_Panel,
+    Prefabs: {
+        Window: Window_prefab
+    }
 };
