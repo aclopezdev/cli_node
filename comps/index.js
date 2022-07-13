@@ -1,79 +1,6 @@
 const { Comp } = require('../cli_relast/comp.js');
+const Rendering = require('../cli_relast/core/rendering.js');
 const UI = require('../cli_relast/core/ui.js');
-
-function bread_crumb(txt, item)
-{
-	let _txt = txt;
-	let _item = item;
-
-	let _public =
-	{
-		label: _txt,
-		item: _item
-	};
-
-	return _public;
-};
-
-class Nav_Path extends Comp
-{
-	_buffer = [];
-
-	constructor(props)
-	{
-		super(props);
-	}
-
-	add_crumb = (txt, item) =>
-	{
-		if(!txt || !item) return;
-		this._buffer.push(new bread_crumb(txt, item));
-	}
-
-	draw = () =>
-	{
-		return ``;
-	}
-}
-
-class Body extends Comp
-{
-	_buffer = [];
-
-	constructor(props)
-	{
-		super(props);
-	}
-
-	states = () =>
-	{
-		this.state(`head`, ``);
-	}
-
-	actions = () =>
-	{
-		this.action(`add`, data =>
-		{
-			if(!data) return;
-			if(!data.name || !data.item) return;
-			this._buffer[data.name] = data.item;		
-		});
-
-		this.action(`change`, data =>
-		{
-			if(!data) return;
-			if(!data.name) return;
-			this.state(`head`, data.name);
-		});
-	}
-
-	draw = () =>
-	{
-		let head = this.state(`head`);
-		let item = this._buffer[ head ] || { draw: () => { return `404`; } };
-		return `${ item.draw() }`;
-	}
-}
 
 ///////////////////////////////////////////////////////////////////
 
@@ -100,19 +27,20 @@ class Render_Panel extends Base
     {
         super(props);
     }
-    config_render_area = (props) =>
+    get_window = () => { return this._window; }
+    config_render_area = (props, type = 0) =>
     {
-        this._window = new UI.Window(props);
-    }
-
-    render = () =>
-    {
-        console.log(`ewiufhwirghf`);
-        console.log(process.stdout.isTTY);
+        if(type === UI.WINDOW.PANEL){
+            Rendering.add_panel(this);
+            this._window = new UI.Window(props);
+        }else if(type === UI.WINDOW.MODAL){
+            Rendering.add_modal(this);
+            this._window = new UI.Modal(props);
+        }
     }
 }
 
-class Window_prefab extends Render_Panel
+class Modal extends Render_Panel
 {
     constructor(props)
     {
@@ -122,10 +50,7 @@ class Window_prefab extends Render_Panel
 
 module.exports =
 {
-	Nav_Path: Nav_Path,
     Base: Base,
     Render_Panel: Render_Panel,
-    Prefabs: {
-        Window: Window_prefab
-    }
+    Modal: Modal
 };

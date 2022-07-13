@@ -1,6 +1,6 @@
 /*jshint esversion: 8*/
 
-const Math =
+const Math2D =
 {
     Vector2D: function(x, y)
     {
@@ -21,4 +21,4 @@ const Math =
     }
 };
 
-module.exports = Math;
+module.exports = Math2D;

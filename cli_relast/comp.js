@@ -64,10 +64,10 @@ class Comp
 
     add_comp = (Class, name, props = {}) =>
     {
-        if(typeof Class !== 'undefined' || typeof name !== 'string') return;
+        if(typeof Class === 'undefined' || typeof name !== 'string') return;
 
         props.name = name;
-        props.bbox = data.bbox || this;
+        props.bbox = props.bbox || this;
         props.class = Class;
         props.parent = this;
         props.main = this._main || this;

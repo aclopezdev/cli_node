@@ -7,6 +7,7 @@ const {Print} = require('./core/output');
 
 const { Render_Panel } = require('../comps/index');
 const Screen = require('./core/screen');
+const Rendering = require('./core/rendering');
 
 
 const engine =
@@ -26,10 +27,11 @@ const engine =
         if(this._root instanceof Render_Panel)
         {
             this._root.config_render_area({
+                border: 1,
                 x: 0,
                 y: 0,
-                w: Screen._cols,
-                h: Screen._rows,
+                w: Screen._cols / 1,
+                h: Screen._rows / 1,
                 zindex: 1,
             });
         }
@@ -66,10 +68,10 @@ const engine =
     },
     render: function()
     {
-        Print.clear();
+        //Print.clear();
         if(this._root instanceof Render_Panel)
         {
-            this._root.render();
+            Rendering.rendering();
         }else
         {
             this._root.page();

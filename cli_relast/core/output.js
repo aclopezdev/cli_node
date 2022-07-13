@@ -2,14 +2,6 @@
 
 const {Style} = require('./color');
 
-const window = function(props)
-{
-    this._w = props.w || 90;
-    this._h = props.h || 90;
-    this._z = props.z || 1;
-    this._border = props.border || 0;
-}
-
 module.exports.Print =
 {
     cols: process.stdout.columns,
@@ -81,4 +73,5 @@ module.exports.Print =
     {
         console.log(btns);
     }
-}
+};
+

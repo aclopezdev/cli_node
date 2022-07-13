@@ -4,6 +4,7 @@ const { CLI_Relast, Comps } = Kix;
 const { Reducer, Relast, Nav_System, Engine, Interact, Viewer, Comp, Log, Controls, Print } = CLI_Relast;
 
 const util = require('util');
+const UI = require('./cli_relast/core/ui');
 const exec = util.promisify(require('child_process').exec);
 
 //--------------------------------------------------------------------------------------------------- 
@@ -35,6 +36,25 @@ class Nav_Controller extends Comp
     }
 }
 
+class Modal1 extends Comps.Modal
+{
+    constructor(props)
+    {
+        super(props);
+        this.config_render_area({
+            w: 50,
+            h: 20,
+            border: UI.WINDOW.BORDERS_TYPE.DOUBLE
+        }, UI.WINDOW.MODAL);
+    }
+    actions = () =>
+    {
+        this.action(`start`, () =>
+            {
+            });
+    }
+}
+
 class App extends Comps.Render_Panel
 {
     constructor(props)
@@ -44,6 +64,7 @@ class App extends Comps.Render_Panel
     components = () =>
     {
         this.add_comp(Nav_Controller, `Navigator`);
+        this.add_comp(Modal1, `Modal1`);
     }
     states = () =>
     {
