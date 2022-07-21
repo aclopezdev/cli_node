@@ -19,6 +19,7 @@ const Rendering =
     },
     rendering: function()
     {
+        console.clear();
         /*
         let nearest = null;
         for(let p of this._panels)
@@ -75,7 +76,7 @@ const Rendering =
         {
             for(let x = 0; x < Screen._cols; x++)
             {
-                //process.stdout.write(this._buffering[x][y]);
+                process.stdout.write(this._buffering[x][y]);
             }
         }
     }
