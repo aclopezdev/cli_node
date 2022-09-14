@@ -1,20 +1,17 @@
-/*jshint esversion:8*/
+const {
+	Engine,
+	Scene_manager
+} = require('./src/index.js');
 
-const Relast = require('./cli_relast/index');
-
-
-Relast.run = (props, main_app, cback) =>
+const KCLI =
 {
-    if(!props) return;
-    Relast.Relast.run(props, main_app);
-    if(cback) cback( Relast, Relast.Relast.app() );
+	init: () => {
+		Engine.init();
+	},
+	engine: () => { return Engine; },
+	scene_manager: () => { return Scene_manager; }
 };
 
-const Kix = {
-        ARGS: process.argv.slice(2),
-        DIR: process.cwd(),
-        CLI_Relast: Relast,
-        Comps: require('./comps/index'),
-    };
+KCLI.init();
 
-module.exports = Kix;
+module.exports = KCLI;

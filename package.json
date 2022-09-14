@@ -4,7 +4,7 @@
   "description": "Interactive CLI App",
   "main": "index.js",
   "scripts": {
-    "testing": "node git_testing.js",
+    "testing": "node ./testing/test1.js",
     "dev": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
