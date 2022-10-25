@@ -4,36 +4,31 @@ const { Item, Items, TItems } = require('./items.js');
 
 const Scene_Manager =
 {
-	parent_relation: (node, parent) => {
+	set_parent: (node, parent) => {
 		if (typeof parent !== 'undefined') {
 			parent.add_child(node);
 			node.set_parent(parent);
 		}
 	},
 	new: {
-		node: (props, parent) => {
+		node: (props) => {
 			const node = new Node(props);
-			Scene_Manager.parent_relation(node, parent);
 			return node;
 		},
-		stage: (props, parent) => {
+		stage: (props) => {
 			const stage = new Stage(props);
-			Scene_Manager.parent_relation(stage, parent);
 			return stage;
 		},
-		item: (props, parent) => {
+		item: (props) => {
 			const item = new Item(props);
-			Scene_Manager.parent_relation(item, parent);
 			return item;
 		},
-		items_list: (props, parent) => {
+		items_list: (props) => {
 			const list = new Items(props);
-			Scene_Manager.parent_relation(list, parent);
 			return list;
 		},
-		items_table: (props, parent) => {
+		items_table: (props) => {
 			const table = new TItems(props);
-			Scene_Manager.parent_relation(table, parent);
 			return table;
 		}
 	}

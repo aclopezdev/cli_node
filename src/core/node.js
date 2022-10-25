@@ -17,6 +17,7 @@ class Node extends Base {
 	add_child = (child) => {
 		if (typeof child === 'undefined') return;
 		this._childs.push(child);
+		child.set_parent(this);
 	}
 	child_by_name = (name) => {
 		if (typeof name !== 'string') return undefined;
