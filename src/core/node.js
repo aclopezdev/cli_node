@@ -24,6 +24,12 @@ class Node extends Base {
 			if (c._name === name) return c
 		return undefined;
 	}
+	set_rect = ({ x, y, w, h }) => {
+		this._rect.x = x || this._rect.x;
+		this._rect.y = y || this._rect.y;
+		this._rect.w = w || this._rect.w;
+		this._rect.h = h || this._rect.h;
+	}
 }
 
 module.exports = Node;

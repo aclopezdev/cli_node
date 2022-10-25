@@ -4,6 +4,8 @@ class Panel extends Node {
 	constructor(props) {
 		super(props);
 	}
+	render = () => {
+	}
 }
 
 module.exports = Panel;
